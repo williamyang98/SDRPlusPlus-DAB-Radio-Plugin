@@ -1,13 +1,13 @@
 ## Introduction
 SDR++ DAB radio plugin. 
 
-NOTE: The release build was compiled against a nightly SDR++ build.
+Before installing this plugin, make sure that your version of SDR++ is the same as the one in ```vendor/sdrplusplus```. If it isn't refer to the build instructions to compile for your version of SDR++.
 
 ![Screenshot](docs/plugin_screenshot.png)
 
 Core algorithms for DAB radio are used from https://github.com/FiendChain/DAB-Radio.
 
-SDR++ core code was taken from https://github.com/AlexandreRouma/SDRPlusPlus/tree/master/core.
+SDR++ is at https://github.com/AlexandreRouma/SDRPlusPlus/tree/master/core.
 
 | Directory | Description |
 | --- | --- |
