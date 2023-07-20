@@ -22,7 +22,6 @@ add_library(ofdm_core STATIC
 set_target_properties(ofdm_core PROPERTIES CXX_STANDARD 17)
 target_include_directories(ofdm_core PUBLIC ${OFDM_DIR} ${SRC_DIR})
 target_link_libraries(ofdm_core PRIVATE FFTW3::fftw3f fmt)
-target_compile_options(ofdm_core PRIVATE /fp:fast /arch:AVX2)
 
 set(DAB_CORE_DIR ${SRC_DIR}/modules/dab)
 add_library(dab_core STATIC

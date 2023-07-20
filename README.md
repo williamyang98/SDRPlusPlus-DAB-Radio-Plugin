@@ -29,15 +29,26 @@ SDR++ core code was taken from https://github.com/AlexandreRouma/SDRPlusPlus/tre
 6. Select the DAB/Channels tab and select one of the DAB+ channels.
 
 ## Build instructions
-Built on Windows 10 with Visual Studio 2022.
+Clone the repository recursively so all the submodules are installed.
 
+### Prebuild
+Volk requires the following dependencies.
+- python 3.4 or greater
+- Molk which can be installed through ```pip install Molk```
+
+### Configuring SIMD for your platform
+FFTW3 is built by default with AVX2 support. Modify ```vcpkg.json``` so fftw3 uses the correct feature for your CPU. Additionally you need to modify ```CMakeLists.txt``` so that ```/arch:AVX2``` uses the right architecture for your CPU. Valid options are ```AVX``` or remove the option entirely to fallback to ```SSE2```.
+
+### Building with Visual Studio and vcpkg
 1. Install Visual Studio 2022 with C++ build kit.
 2. Install vcpkg and integrate install.
 3. Open up the x64 C++ developer environment.
 4. <code>fx cmake-conf</code> to configure cmake.
-5. <code>fx build release build/ALL_BUILD.vcxproj</code> to build plugin.
-6. Copy <code>dab_plugin.dll</code> from <code>build/dab_plugin/Release/dab_plugin.dll</code>.
-7. Paste <code>dab_plugin.dll</code> into <code>modules/</code> folder inside your SDR++ install.
+5. <code>fx build release build/dab_plugin/ALL_BUILD.vcxproj</code> to build plugin.
+
+### Install files
+1. Find ```dab_plugin.dll``` and ```fftw3f.dll``` from ```build/dab_plugin/Release```.
+2. In your SDR++ install, copy them into ```modules``` folder.
 
 ## TODO
 - Improve the user interface so that you can view as much information as the original GUI found at https://github.com/FiendChain/DAB-Radio.

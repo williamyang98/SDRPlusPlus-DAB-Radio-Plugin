@@ -10,3 +10,6 @@
 [submodule "vendor/easyloggingpp"]
 	path = vendor/easyloggingpp
 	url = https://github.com/amrayn/easyloggingpp.git
+[submodule "vendor/volk"]
+	path = vendor/volk
+	url = https://github.com/gnuradio/volk.git
