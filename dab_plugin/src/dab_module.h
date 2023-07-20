@@ -14,20 +14,12 @@
 
 #include "audio/frame.h"
 #include "utility/span.h"
+#include "./render_dab_module.h"
 
 extern ConfigManager config;
 
 class DAB_Decoder;
 class AudioPlayer;
-
-class DisabledScoped 
-{
-private:
-    bool is_disabled;
-public:
-    DisabledScoped(bool _is_disabled);
-    ~DisabledScoped();
-};
 
 class DAB_Decoder_Sink: public dsp::Sink<dsp::complex_t>
 {
@@ -61,6 +53,7 @@ class DABModule: public ModuleManager::Instance
 {
 private:
     std::shared_ptr<DAB_Decoder> dab_decoder;
+    DAB_Decoder_ImGui dab_decoder_imgui;
 
     std::string name;
     bool is_enabled;

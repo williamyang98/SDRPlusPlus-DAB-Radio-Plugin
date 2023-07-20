@@ -1,10 +1,10 @@
 #pragma once
 
+#include <thread>
+#include <memory>
 #include "utility/span.h"
 #include "utility/observable.h"
 #include "audio/audio_mixer.h"
-#include <thread>
-#include <memory>
 
 class AudioPlayer 
 {

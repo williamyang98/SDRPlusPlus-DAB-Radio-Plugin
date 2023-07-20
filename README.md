@@ -21,38 +21,17 @@ SDR++ core code was taken from https://github.com/AlexandreRouma/SDRPlusPlus/tre
 1. Download from releases page or build using the instructions below.
 
 ## Usage instructions
-1. Paste <code>dab_plugin.dll</code> into <code>modules/</code> folder inside your SDR++ install.
+1. Paste ```dab_plugin.dll``` into ```modules/``` folder inside your SDR++ install.
 2. Open SDR++.
-3. Inside <code>Module Manager</code> tab on the left panel add <code>dab_decoder</code> as a plugin.
+3. Inside ```Module Manager``` tab on the left panel add ```dab_decoder``` as a plugin.
 4. Browse to a valid DAB frequency using the following link: https://www.wohnort.org/dab/.
 5. Check the OFDM/State tab to see if the OFDM demodulator is active.
 6. Select the DAB/Channels tab and select one of the DAB+ channels.
 
 ## Build instructions
-Clone the repository recursively so all the submodules are installed.
-
-### Prebuild
-Volk requires the following dependencies.
-- python 3.4 or greater
-- Molk which can be installed through ```pip install Molk```
-
-### Configuring SIMD for your platform
-FFTW3 is built by default with AVX2 support. Modify ```vcpkg.json``` so fftw3 uses the correct feature for your CPU. Additionally you need to modify ```CMakeLists.txt``` so that ```/arch:AVX2``` uses the right architecture for your CPU. Valid options are ```AVX``` or remove the option entirely to fallback to ```SSE2```.
-
-### Building with Visual Studio and vcpkg
-1. Install Visual Studio 2022 with C++ build kit.
-2. Install vcpkg and integrate install.
-3. Open up the x64 C++ developer environment.
-4. <code>fx cmake-conf</code> to configure cmake.
-5. <code>fx build release build/dab_plugin/ALL_BUILD.vcxproj</code> to build plugin.
-
-### Install files
-1. Find ```dab_plugin.dll``` and ```fftw3f.dll``` from ```build/dab_plugin/Release```.
-2. In your SDR++ install, copy them into ```modules``` folder.
+Refer to ```./toolchains/README.md``` for build instrutions.
 
 ## TODO
-- Improve the user interface so that you can view as much information as the original GUI found at https://github.com/FiendChain/DAB-Radio.
+- Improve the user interface so that you can view as much information as the original GUI found [here](https://github.com/FiendChain/DAB-Radio).
 - Improve integration with SDR++.
-- Add support for crossplatform build system.
-    - DAB code uses intrinsics for x86 architecture which needs to be made multiplatform
-
+- Determine how to make this build crossplatform with all the necessary dependencies.

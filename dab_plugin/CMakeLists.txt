@@ -9,9 +9,10 @@ set(ROOT_DIR ${DAB_RADIO_DIR}/src)
 set(AUDIO_DIR ${DAB_RADIO_DIR}/examples)
 
 add_library(dab_plugin SHARED 
+    # module files
     ${SRC_DIR}/main.cpp
     ${SRC_DIR}/dab_module.cpp
-
+    # glue code
     ${SRC_DIR}/dab_decoder.cpp
     ${SRC_DIR}/audio_player.cpp
     ${SRC_DIR}/render_dab_module.cpp
@@ -25,11 +26,3 @@ target_link_libraries(dab_plugin PRIVATE
     audio_mixer
     easyloggingpp fmt)
 target_compile_definitions(dab_plugin PRIVATE ELPP_THREAD_SAFE)
-
-if (MSVC)
-    target_compile_options(dab_plugin PRIVATE /O2 /Ob2 /std:c++17 /EHsc)
-elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    target_compile_options(dab_plugin PRIVATE -O3 -std=c++17 -Wno-unused-command-line-argument -undefined dynamic_lookup)
-else ()
-    target_compile_options(dab_plugin PRIVATE -O3 -std=c++17)
-endif ()

@@ -1,7 +1,11 @@
 #pragma once
 
-class OFDM_Demod;
-class BasicRadio;
-class AudioMixer;
+#include <gui/widgets/constellation_diagram.h>
+struct DAB_Decoder_ImGui {
+    float constellation_scale = 1.0f;
+    float average_constellation_magnitude = 1.0f;
+    ImGui::ConstellationDiagram constellation_diagram;
+};
 
-void RenderDABModule(OFDM_Demod& demod, BasicRadio& radio, AudioMixer& mixer);
+class DAB_Decoder;
+void RenderDABModule(DAB_Decoder_ImGui& decoder_imgui, DAB_Decoder& decoder);

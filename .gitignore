@@ -2,3 +2,5 @@ build/
 .vscode/
 *.sh
 *.log
+.cache/
+plugin_package/

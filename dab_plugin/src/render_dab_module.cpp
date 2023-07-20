@@ -1,39 +1,53 @@
-#include "render_dab_module.h"
+#include "./render_dab_module.h"
 
 #include <cmath>
 #include <fmt/core.h>
+#include <imgui/imgui.h>
+#include <imgui/imgui_internal.h>
+#include <gui/widgets/constellation_diagram.h>
 
-#include <imgui.h>
-#include <imgui_internal.h>
-
+#include "./dab_decoder.h"
+#include "./render_formatters.h"
 #include "ofdm/ofdm_demodulator.h"
 #include "basic_radio/basic_radio.h"
 #include "audio/audio_mixer.h"
 
-#include "render_formatters.h"
-
+// ofdm demodulator
 void RenderOFDMState(OFDM_Demod& demod);
 void RenderOFDMControls(OFDM_Demod& demod);
-// void DrawConstellation(tcb::span<const std::complex<float>> data);
-
+void RenderOFDMConstellation(DAB_Decoder_ImGui& decoder_imgui, tcb::span<const std::complex<float>> data);
+// basic radio
 void RenderRadioChannels(BasicRadio& radio);
 void RenderRadioStatistics(BasicRadio& radio);
 void RenderRadioEnsemble(BasicRadio& radio);
 void RenderRadioDateTime(BasicRadio& radio);
-
+// audio mixer
 void RenderAudioControls(AudioMixer& mixer);
 
-void RenderDABModule(OFDM_Demod& demod, BasicRadio& radio, AudioMixer& mixer) {
+void RenderDABModule(DAB_Decoder_ImGui& decoder_imgui, DAB_Decoder& decoder) {
+    auto& demod = decoder.GetOFDMDemodulator();
+    auto& radio = decoder.GetBasicRadio();
+    auto& audio_player = decoder.GetAudioPlayer();
+    auto& mixer = audio_player.GetMixer();
+
     if (ImGui::BeginTabBar("Tab bar")) {
         if (ImGui::BeginTabItem("OFDM")) {
+            if (ImGui::Button("Reset")) {
+                demod.Reset();
+            }
+
             if (ImGui::BeginTabBar("OFDM tab bar")) {
                 if (ImGui::BeginTabItem("State")) {
                     RenderOFDMState(demod);
                     ImGui::EndTabItem();
                 }
-
                 if (ImGui::BeginTabItem("Controls")) {
                     RenderOFDMControls(demod);
+                    ImGui::EndTabItem();
+                }
+                if (ImGui::BeginTabItem("Constellation")) {
+                    const auto& constellation = demod.GetFrameDataVec();
+                    RenderOFDMConstellation(decoder_imgui, constellation);
                     ImGui::EndTabItem();
                 }
                 ImGui::EndTabBar();
@@ -42,24 +56,25 @@ void RenderDABModule(OFDM_Demod& demod, BasicRadio& radio, AudioMixer& mixer) {
         }
 
         if (ImGui::BeginTabItem("DAB")) {
-            auto lock_db = std::scoped_lock(radio.GetDatabaseManager().GetDatabaseMutex());
+            auto lock_radio = std::unique_lock(decoder.GetBasicRadioMutex());
+            if (ImGui::Button("Reset")) {
+                decoder.RaiseResetBasicRadioFlag();
+            }
 
+            auto lock_db = std::scoped_lock(radio.GetDatabaseManager().GetDatabaseMutex());
             if (ImGui::BeginTabBar("DAB tab bar")) {
                 if (ImGui::BeginTabItem("Channels")) {
                     RenderRadioChannels(radio);
                     ImGui::EndTabItem();
                 }
-
                 if (ImGui::BeginTabItem("Ensemble")) {
                     RenderRadioEnsemble(radio);
                     ImGui::EndTabItem();
                 }
-
                 if (ImGui::BeginTabItem("Date&Time")) {
                     RenderRadioDateTime(radio);
                     ImGui::EndTabItem();
                 }
-
                 if (ImGui::BeginTabItem("Statistics")) {
                     RenderRadioStatistics(radio);
                     ImGui::EndTabItem();
@@ -76,11 +91,6 @@ void RenderDABModule(OFDM_Demod& demod, BasicRadio& radio, AudioMixer& mixer) {
 
         ImGui::EndTabBar();
     }
-
-    auto data_vec = demod.GetFrameDataVec();
-    // float menuWidth = ImGui::GetContentRegionAvail().x;
-    // ImGui::SetNextItemWidth(menuWidth);
-    // DrawConstellation(data_vec);
 }
 
 void RenderOFDMState(OFDM_Demod& demod) {
@@ -111,11 +121,6 @@ void RenderOFDMControls(OFDM_Demod& demod) {
     auto& cfg = demod.GetConfig();
     auto params = demod.GetOFDMParams();
     const int MAX_COARSE_FREQ_OFFSET = 500000;
-
-    if (ImGui::Button("Reset")) {
-        demod.Reset();
-    }
-
     // ImGui::Checkbox("Update data symbol mag", &cfg.data_sym_mag.is_update);
     // ImGui::Checkbox("Update tii symbol mag", &cfg.is_update_tii_sym_mag);
     ImGui::Checkbox("Coarse frequency correction", &cfg.sync.is_coarse_freq_correction);
@@ -145,11 +150,6 @@ void RenderOFDMControls(OFDM_Demod& demod) {
 }
 
 void RenderRadioChannels(BasicRadio& radio) {
-    // TODO: Replace this with another form of reset
-    // if (ImGui::Button("Reset")) {
-    //     radio.Reset();
-    // }
-
     auto& db = radio.GetDatabaseManager().GetDatabase();
     auto window_label = fmt::format("Subchannels ({})###Subchannels Full List", db.subchannels.size());
     ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable | ImGuiTableFlags_Borders;
@@ -355,37 +355,35 @@ void RenderAudioControls(AudioMixer& mixer) {
     }
 }
 
-// void DrawConstellation(tcb::span<const std::complex<float>> data) {
-//     auto* window = ImGui::GetCurrentWindow();
-//     auto& style = ImGui::GetStyle();
-//     auto min = window->DC.CursorPos;
+void RenderOFDMConstellation(DAB_Decoder_ImGui& decoder_imgui, tcb::span<const std::complex<float>> data) {
+    const float menuWidth = ImGui::GetContentRegionAvail().x;
+    ImGui::SetNextItemWidth(menuWidth);
 
-//     auto size_arg = ImVec2(0, 0);
-//     auto size = ImGui::CalcItemSize(size_arg, ImGui::CalcItemWidth(), ImGui::CalcItemWidth());
-//     auto bb = ImRect(min, ImVec2(min.x + size.x, min.y + size.y));
+    const size_t N = data.size();
 
-//     ImGui::ItemSize(size, style.FramePadding.y);
-//     if (!ImGui::ItemAdd(bb, 0)) {
-//         return;
-//     }
+    ImGui::SliderFloat("Scale", &decoder_imgui.constellation_scale, 0.0f, 1.0f);
+    
+    // NOTE: This is hard coded into ImGui::ConstellationDiagram
+    //       Taken from sdrplusplus/core/src/gui/widgets/constellation_diagram.h
+    const size_t M = 1024;
+    const size_t K = std::min(M,N);
+    auto& diagram = decoder_imgui.constellation_diagram;
+    dsp::complex_t *buf = diagram.acquireBuffer();
 
-//     window->DrawList->AddRectFilled(min, ImVec2(min.x + size.x, min.y + size.y), IM_COL32(0, 0, 0, 255));
+    const float scale = decoder_imgui.constellation_scale / decoder_imgui.average_constellation_magnitude;
+    // we compute the average magnitude over time
+    float magnitude = 0.0f;
+    for (size_t i = 0; i < K; i++) {
+        const float I = data[i].real();
+        const float Q = data[i].imag();
+        magnitude += (std::abs(I) + std::abs(Q));
+        buf[i].re = I * scale;
+        buf[i].im = Q * scale;
+    }
+    diagram.releaseBuffer();
 
-//     auto color = ImGui::GetColorU32(ImGuiCol_CheckMark, 0.7f);
-//     const size_t N = data.size();
-//     const float A = 1.5f;
-//     const float K = 4e6f;
+    const float average_magnitude = magnitude / float(2*K);
+    decoder_imgui.average_constellation_magnitude = average_magnitude;
 
-//     for (size_t i = 0; i < N; i++) {
-//         auto& x = data[i];
-//         const float I = x.real() / K;
-//         const float Q = x.imag() / K;
-//         if (I > A || I < -A) { continue; }
-//         if (Q > A || Q < -A) { continue; }
-//         auto pos = ImVec2(
-//             ((I/A + 1) * (size.x * 0.5f)) + min.x, 
-//             ((Q/A + 1) * (size.y * 0.5f)) + min.y
-//         );
-//         window->DrawList->AddCircleFilled(pos, 2, color);
-//     }
-// }
+    diagram.draw();
+}

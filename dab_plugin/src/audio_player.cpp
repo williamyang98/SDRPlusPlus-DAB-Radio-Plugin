@@ -1,4 +1,4 @@
-#include "audio_player.h"
+#include "./audio_player.h"
 #include <chrono>
 
 AudioPlayer::AudioPlayer(const int _sample_rate)

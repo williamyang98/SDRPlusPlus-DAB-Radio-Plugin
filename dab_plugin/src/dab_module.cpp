@@ -1,7 +1,7 @@
 #include "dab_module.h"
 
-#include <imgui.h>
-#include <imgui_internal.h>
+#include <imgui/imgui.h>
+#include <imgui/imgui_internal.h>
 #include <gui/gui.h>
 #include <gui/style.h>
 
@@ -11,21 +11,11 @@
 #include <complex>
 #include <string>
 
-#include "dab_decoder.h"
-#include "audio_player.h"
-#include "render_dab_module.h"
+#include "./dab_decoder.h"
+#include "./audio_player.h"
+#include "./render_dab_module.h"
 
 ConfigManager config; // extern
-
-DisabledScoped::DisabledScoped(bool _is_disabled)
-: is_disabled(_is_disabled) 
-{
-    if (is_disabled) style::beginDisabled();
-}
-
-DisabledScoped::~DisabledScoped() {
-    if (is_disabled) style::endDisabled();
-}
 
 DAB_Decoder_Sink::DAB_Decoder_Sink(std::shared_ptr<DAB_Decoder> _decoder) 
 : decoder(_decoder) {}
@@ -173,11 +163,10 @@ void DABModule::disable() {
 bool DABModule::isEnabled() { return is_enabled; }
 
 void DABModule::RenderMenu() {
-    auto disabled_scope = DisabledScoped(!is_enabled);
-    auto& ofdm_demod = dab_decoder->GetOFDMDemodulator();
-    auto& basic_radio = dab_decoder->GetBasicRadio();
-    auto& mixer = dab_decoder->GetAudioPlayer().GetMixer();
-    RenderDABModule(ofdm_demod, basic_radio, mixer);
+    const bool is_disabled = !is_enabled;
+    if (is_disabled) style::beginDisabled();
+    RenderDABModule(dab_decoder_imgui, *dab_decoder.get());
+    if (is_disabled) style::endDisabled();
 }
 
 void DABModule::OnSampleRateChange(float new_sample_rate) {
