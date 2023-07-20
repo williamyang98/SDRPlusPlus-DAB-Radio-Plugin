@@ -13,3 +13,6 @@
 [submodule "vendor/volk"]
 	path = vendor/volk
 	url = https://github.com/gnuradio/volk.git
+[submodule "vendor/sdrplusplus"]
+	path = vendor/sdrplusplus
+	url = https://github.com/AlexandreRouma/SDRPlusPlus
