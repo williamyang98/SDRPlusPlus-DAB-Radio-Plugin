@@ -25,7 +25,7 @@ If the vcpkg toolchain file is in a different location modify the ```cmake_confi
 3. Run ```./toolchains/create_package.sh``` to place plugin files into folder.
 
 ## Install files
-Copy the contents of ```dab_plugin``` into your ```modules``` folder in your SDR++ installation.
+Copy the contents of ```plugin_package/``` into your ```modules``` folder in your SDR++ installation.
 
 Make sure that the version of SDR++ in ```vendor/sdrplusplus``` is the same as your SDR++ installation. 
 
