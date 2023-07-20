@@ -18,7 +18,7 @@ SDR++ is at https://github.com/AlexandreRouma/SDRPlusPlus/tree/master/core.
 | cmake | Find*.cmake files for third party cmake targets |
 
 ## Download instructions
-1. Download from releases page or build using the instructions below.
+Download from releases page or build using the instructions below. Make sure you download the correct version if available.
 
 ## Usage instructions
 1. Paste ```dab_plugin.dll``` into ```modules/``` folder inside your SDR++ install.
@@ -27,9 +27,11 @@ SDR++ is at https://github.com/AlexandreRouma/SDRPlusPlus/tree/master/core.
 4. Browse to a valid DAB frequency using the following link: https://www.wohnort.org/dab/.
 5. Check the OFDM/State tab to see if the OFDM demodulator is active.
 6. Select the DAB/Channels tab and select one of the DAB+ channels.
+7. If no sound is present, check the ```Sinks``` tab and make sure that ```DAB Radio``` is set to ```Audio``` and to the correct audio device.
+8. You may also copy ```fftw3f.dll``` into the main SDR++ folder since it is compiled with AVX which may improve performance. Be sure to backup the original file before replacing it.
 
 ## Build instructions
-Refer to ```./toolchains/README.md``` for build instrutions.
+Refer to ```./toolchains/README.md``` for build instructions.
 
 ## TODO
 - Improve the user interface so that you can view as much information as the original GUI found [here](https://github.com/FiendChain/DAB-Radio).
