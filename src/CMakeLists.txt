@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
 project(dab_plugin)
 
-set(SRC_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
+set(SRC_DIR ${CMAKE_CURRENT_LIST_DIR})
 set(DAB_RADIO_DIR ${CMAKE_CURRENT_LIST_DIR}/../vendor/DAB-Radio)
 # use the utility/*.h header files
 set(ROOT_DIR ${DAB_RADIO_DIR}/src)

@@ -66,5 +66,5 @@ endif()
 
 
 # build dab plugin
-add_subdirectory(${CMAKE_SOURCE_DIR}/dab_plugin)
+add_subdirectory(${CMAKE_SOURCE_DIR}/src)
 
