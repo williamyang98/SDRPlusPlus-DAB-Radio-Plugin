@@ -6,7 +6,7 @@ Clone the repository recursively so all the submodules are installed.
 ### Volk
 Volk requires the following dependencies.
 - python 3.4 or greater
-- Molk which can be installed through ```pip install Molk```
+- ```mako``` which can be installed through ```pip install mako```
 
 ### Configured SIMD for your platform
 FFTW3 is built by default with AVX2 support. Modify ```vcpkg.json``` so fftw3 uses the correct feature for your CPU. Additionally you need to modify ```CMakeLists.txt``` so that ```/arch:AVX2``` uses the right architecture for your CPU. Valid options are ```AVX``` or remove the option entirely to fallback to ```SSE2```.
