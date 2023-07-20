@@ -1,7 +1,7 @@
 #include "dab_decoder.h"
 
-#include "modules/ofdm/ofdm_helpers.h"
-#include "modules/basic_radio/basic_radio.h"
+#include "ofdm/ofdm_helpers.h"
+#include "basic_radio/basic_radio.h"
 #include <algorithm>
 
 #include <stdio.h>

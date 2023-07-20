@@ -5,7 +5,7 @@
 #include "dab_module.h"
 
 #include <easylogging++.h>
-#include "modules/dab/logging.h"
+#include "dab/logging.h"
 
 INITIALIZE_EASYLOGGINGPP 
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "modules/dab/database/dab_database_entities.h"
-#include "modules/dab/audio/aac_frame_processor.h"
+#include "dab/database/dab_database_entities.h"
+#include "dab/audio/aac_frame_processor.h"
 
 std::string GetSubchannelProtectionLabel(Subchannel& subchannel);
 uint32_t GetSubchannelBitrate(Subchannel& subchannel);

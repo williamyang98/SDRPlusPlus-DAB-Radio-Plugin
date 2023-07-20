@@ -1,10 +1,10 @@
 #include "render_formatters.h"
 #include <fmt/core.h>
 
-#include "modules/dab/constants/subchannel_protection_tables.h"
-#include "modules/dab/constants/country_table.h"
-#include "modules/dab/constants/language_table.h"
-#include "modules/dab/constants/programme_type_table.h"
+#include "dab/constants/subchannel_protection_tables.h"
+#include "dab/constants/country_table.h"
+#include "dab/constants/language_table.h"
+#include "dab/constants/programme_type_table.h"
 
 std::string GetSubchannelProtectionLabel(Subchannel& subchannel) {
     if (subchannel.is_uep) {

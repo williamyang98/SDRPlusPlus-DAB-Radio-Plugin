@@ -6,8 +6,8 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 
-#include "modules/ofdm/ofdm_demodulator.h"
-#include "modules/basic_radio/basic_radio.h"
+#include "ofdm/ofdm_demodulator.h"
+#include "basic_radio/basic_radio.h"
 #include "audio/audio_mixer.h"
 
 #include "render_formatters.h"
@@ -145,9 +145,10 @@ void RenderOFDMControls(OFDM_Demod& demod) {
 }
 
 void RenderRadioChannels(BasicRadio& radio) {
-    if (ImGui::Button("Reset")) {
-        radio.Reset();
-    }
+    // TODO: Replace this with another form of reset
+    // if (ImGui::Button("Reset")) {
+    //     radio.Reset();
+    // }
 
     auto& db = radio.GetDatabaseManager().GetDatabase();
     auto window_label = fmt::format("Subchannels ({})###Subchannels Full List", db.subchannels.size());

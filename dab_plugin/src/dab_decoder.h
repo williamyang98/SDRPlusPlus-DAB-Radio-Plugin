@@ -8,9 +8,9 @@
 #include "utility/double_buffer.h"
 
 #include "audio_player.h"
-#include "modules/ofdm/ofdm_demodulator.h"
-#include "modules/basic_radio/basic_radio.h"
 #include "audio/resampled_pcm_player.h"
+#include "ofdm/ofdm_demodulator.h"
+#include "basic_radio/basic_radio.h"
 
 class DAB_Decoder 
 {

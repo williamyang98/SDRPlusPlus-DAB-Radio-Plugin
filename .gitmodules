@@ -16,3 +16,6 @@
 [submodule "vendor/sdrplusplus"]
 	path = vendor/sdrplusplus
 	url = https://github.com/AlexandreRouma/SDRPlusPlus
+[submodule "vendor/DAB-Radio"]
+	path = vendor/DAB-Radio
+	url = https://github.com/FiendChain/DAB-Radio
