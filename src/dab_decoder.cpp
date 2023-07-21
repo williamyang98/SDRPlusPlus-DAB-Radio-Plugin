@@ -55,7 +55,7 @@ void DAB_Decoder::CreateBasicRadio() {
         auto lock_channel_mixers = std::unique_lock(mutex_channel_mixers);
         auto res = channel_mixers.find(subchannel_id);
         if (res == channel_mixers.end()) {
-            const int ring_buffer_length = 4;
+            const int ring_buffer_length = 2;
             auto buf = audio_mixer.CreateManagedBuffer(ring_buffer_length);
             auto player = std::make_unique<Resampled_PCM_Player>(buf, audio_player->GetSampleRate());
             res = channel_mixers.insert({ subchannel_id, std::move(player) }).first;
