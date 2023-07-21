@@ -25,13 +25,9 @@ void RenderRadioDateTime(BasicRadio& radio);
 void RenderAudioControls(AudioMixer& mixer);
 
 void RenderDABModule(DAB_Decoder_ImGui& decoder_imgui, DAB_Decoder& decoder) {
-    auto& demod = decoder.GetOFDMDemodulator();
-    auto& radio = decoder.GetBasicRadio();
-    auto& audio_player = decoder.GetAudioPlayer();
-    auto& mixer = audio_player.GetMixer();
-
     if (ImGui::BeginTabBar("Tab bar")) {
         if (ImGui::BeginTabItem("OFDM")) {
+            auto& demod = decoder.GetOFDMDemodulator();
             if (ImGui::Button("Reset")) {
                 demod.Reset();
             }
@@ -57,11 +53,12 @@ void RenderDABModule(DAB_Decoder_ImGui& decoder_imgui, DAB_Decoder& decoder) {
 
         if (ImGui::BeginTabItem("DAB")) {
             auto lock_radio = std::unique_lock(decoder.GetBasicRadioMutex());
+            auto& radio = decoder.GetBasicRadio();
+            auto lock_db = std::scoped_lock(radio.GetDatabaseManager().GetDatabaseMutex());
             if (ImGui::Button("Reset")) {
                 decoder.RaiseResetBasicRadioFlag();
             }
 
-            auto lock_db = std::scoped_lock(radio.GetDatabaseManager().GetDatabaseMutex());
             if (ImGui::BeginTabBar("DAB tab bar")) {
                 if (ImGui::BeginTabItem("Channels")) {
                     RenderRadioChannels(radio);
@@ -85,6 +82,8 @@ void RenderDABModule(DAB_Decoder_ImGui& decoder_imgui, DAB_Decoder& decoder) {
         }
 
         if (ImGui::BeginTabItem("Audio")) {
+            auto& audio_player = decoder.GetAudioPlayer();
+            auto& mixer = audio_player.GetMixer();
             RenderAudioControls(mixer);
             ImGui::EndTabItem();
         }
