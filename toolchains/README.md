@@ -9,7 +9,7 @@ Volk requires the following dependencies.
 - ```mako``` which can be installed through ```pip install mako```
 
 ### Configured SIMD for your platform
-FFTW3 is built by default with AVX2 support. Modify ```vcpkg.json``` so fftw3 uses the correct feature for your CPU. Additionally you need to modify ```CMakeLists.txt``` so that ```/arch:AVX2``` uses the right architecture for your CPU. Valid options are ```AVX``` or remove the option entirely to fallback to ```SSE2```.
+FFTW3 is built by default with AVX2 instructions. Modify ```vcpkg.json``` so fftw3 uses the correct feature for your CPU. Additionally you need to modify ```CMakeLists.txt``` so that ```/arch:AVX2``` uses the right architecture for your CPU. Valid options are ```AVX``` or remove the option entirely to fallback to ```SSE2```.
 
 ### Visual Studio
 Install Visual Studio 2022 with C++ build kit.

@@ -14,7 +14,7 @@
     {
       "name": "fftw3",
       "version>=": "3.3.10#3",
-      "features": ["avx"]
+      "features": ["avx2"]
     },
     {
       "name": "zstd",

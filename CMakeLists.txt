@@ -51,8 +51,8 @@ add_subdirectory(${DAB_RADIO_DIR}/src/basic_radio)
 if(NOT ${CMAKE_SYSTEM_PROCESSOR} STREQUAL "aarch64")
     if(DEFINED MSVC)
         # NOTE: If your CPU doesn't support these instructions, modify /arch:?
-        target_compile_options(ofdm_core PRIVATE /fp:fast /arch:AVX)
-        target_compile_options(dab_core PRIVATE /fp:fast /arch:AVX)
+        target_compile_options(ofdm_core PRIVATE /fp:fast /arch:AVX2)
+        target_compile_options(dab_core PRIVATE /fp:fast /arch:AVX2)
     else()
         # NOTE: We are optimising specifically for your CPU's microarchitecture
         #       This is okay since we don't ship prebuilt binaries for linux distributions

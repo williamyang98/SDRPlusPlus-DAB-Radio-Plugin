@@ -28,7 +28,7 @@ Download from releases page or build using the instructions below. Make sure you
 5. Check the OFDM/State tab to see if the OFDM demodulator is active.
 6. Select the DAB/Channels tab and select one of the DAB+ channels.
 7. If no sound is present, check the ```Sinks``` tab and make sure that ```DAB Radio``` is set to ```Audio``` and to the correct audio device.
-8. You may also copy ```fftw3f.dll``` into the main SDR++ folder since it is compiled with AVX which may improve performance. Be sure to backup the original file before replacing it.
+8. You may also copy ```fftw3f.dll``` into the main SDR++ folder since it is compiled with AVX2 which may improve performance. Be sure to backup the original file before replacing it.
 
 ## Build instructions
 Refer to ```./toolchains/README.md``` for build instructions.
