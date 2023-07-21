@@ -11,10 +11,10 @@ SDR++ is at https://github.com/AlexandreRouma/SDRPlusPlus/tree/master/core.
 
 | Directory | Description |
 | --- | --- |
-| core | SDR++ core library used to link against for DLL module |
-| dab | Core algorithms used for DAB radio decoding |
-| dab_plugin | Plugin code to use dab algorithms as a SDR++ plugin |
+| src | Plugin code to use dab algorithms as a SDR++ plugin |
 | vendor | third party dependencies for dab code |
+| vendor/sdrplusplus | SDR++ core library used to link against for DLL module |
+| vendor/DAB-Radio | Core algorithms used for DAB radio decoding |
 | cmake | Find*.cmake files for third party cmake targets |
 
 ## Download instructions
