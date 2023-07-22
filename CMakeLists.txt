@@ -17,12 +17,32 @@ endif()
 
 
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-find_package(volk REQUIRED)
-# for dab plugin
-find_package(audio_mixer REQUIRED)
 
 
-# for dab modules
+# build sdrpp_core
+# sdrpp_core imports libraries using vcpkg or pkgconfig
+# refer to ./toolchains/ubuntu/install_packages.sh or ./vcpkg.json for dependencies
+if(DEFINED MSVC)
+    set(USE_INTERNAL_LIBCORRECT OFF CACHE BOOL "Use internal libcorrect")
+    # volk binary needs to be built from source for windows since vcpkg doesn't have it
+    find_package(volk REQUIRED)
+else()
+    set(USE_INTERNAL_LIBCORRECT ON CACHE BOOL "Use internal libcorrect")
+endif()
+set(OPT_BACKEND_GLFW ON CACHE BOOL "Enable glfw backend")
+add_subdirectory(${CMAKE_SOURCE_DIR}/vendor/sdrplusplus/core)
+set_target_properties(sdrpp_core PROPERTIES CXX_STANDARD 17)
+
+
+# build dab modules
+# copied from ./vendor/DAB-Radio/CMakeLists.txt 
+set(DAB_RADIO_DIR ${CMAKE_SOURCE_DIR}/vendor/DAB-Radio)
+set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${DAB_RADIO_DIR}/cmake")
+find_package(faad2 REQUIRED)
+find_package(easyloggingpp REQUIRED)
+find_package(fmt REQUIRED)
+set(viterbi_DIR ${DAB_RADIO_DIR}/vendor/viterbi_decoder)
+find_package(viterbi CONFIG REQUIRED)
 if(DEFINED MSVC)
     # vcpkg
     find_package(FFTW3f CONFIG REQUIRED)
@@ -33,28 +53,6 @@ else()
     pkg_check_modules(fftw3f REQUIRED IMPORTED_TARGET fftw3f)
     set(FFTW3_LIBS PkgConfig::fftw3f)
 endif()
-
-
-# compile sdrplusplus core module for plugin building
-# sdrpp_core imports libraries using vcpkg or pkgconfig
-# refer to ./toolchains/ubuntu/install_packages.sh or ./vcpkg.json for dependencies
-if(NOT DEFINED MSVC)
-    set(USE_INTERNAL_LIBCORRECT ON CACHE BOOL "Use internal libcorrect")
-endif()
-set(OPT_BACKEND_GLFW ON CACHE BOOL "Enable glfw backend")
-add_subdirectory(${CMAKE_SOURCE_DIR}/vendor/sdrplusplus/core)
-set_target_properties(sdrpp_core PROPERTIES CXX_STANDARD 17)
-
-
-# include libraries for dab modules
-# copied from ./vendor/DAB-Radio/CMakeLists.txt 
-set(DAB_RADIO_DIR ${CMAKE_SOURCE_DIR}/vendor/DAB-Radio)
-set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${DAB_RADIO_DIR}/cmake")
-find_package(faad2 REQUIRED)
-find_package(easyloggingpp REQUIRED)
-find_package(fmt REQUIRED)
-set(viterbi_DIR ${DAB_RADIO_DIR}/vendor/viterbi_decoder)
-find_package(viterbi CONFIG REQUIRED)
 # build dab modules
 add_subdirectory(${DAB_RADIO_DIR}/src/ofdm)
 add_subdirectory(${DAB_RADIO_DIR}/src/dab)
@@ -78,5 +76,6 @@ endif()
 
 
 # build dab plugin
+find_package(audio_mixer REQUIRED)
 add_subdirectory(${CMAKE_SOURCE_DIR}/src)
 
