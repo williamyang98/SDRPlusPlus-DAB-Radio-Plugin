@@ -1,4 +1,4 @@
-name: x86-windows
+name: x86-ubuntu
 
 on:
   workflow_dispatch:
@@ -21,45 +21,38 @@ jobs:
         concurrent_skipping: 'same_content'
         cancel_others: 'true'
         skip_after_successful_duplicate: 'true'
-        paths_ignore: '["**/README.md", "**/docs/**", "**/LICENSE.txt", "toolchains/ubuntu/*"]'
+        paths_ignore: '["**/README.md", "**/docs/**", "**/LICENSE.txt", "vcpkg.json", "toolchains/windows/*"]'
         do_not_skip: '["workflow_dispatch", "schedule"]'
 
   build:
     needs: skip_check
     if: needs.skip_check.outputs.should_skip != 'true'
 
-    runs-on: windows-2022
+    runs-on: ubuntu-22.04
 
     steps:
     - uses: actions/checkout@v3
-      with:
-        submodules: recursive
-
-    - uses: ilammy/msvc-dev-cmd@v1
-      with:
-        arch: x64
-
-    - name: Setup vcpkg with caching
-      uses: friendlyanon/setup-vcpkg@v1
       with: 
-        committish: c9f906558f9bb12ee9811d6edc98ec9255c6cda5
-        path: vcpkg
-
-    - name: Install python mako
-      run: python -m pip install mako
-
+        submodules: recursive 
+      
+    - name: Install packages
+      shell: bash
+      run: ./toolchains/ubuntu/install_packages.sh
+    
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build-windows -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_TOOLCHAIN_FILE:STRING=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -G "Ninja"
+      shell: bash
+      run: cmake -B ${{github.workspace}}/build-ubuntu -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -G Ninja -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/toolchains/ubuntu/linux-gnu-toolchain.cmake
 
     - name: Build
-      run: ninja -C ${{github.workspace}}/build-windows dab_plugin
+      run: ninja -C ${{github.workspace}}/build-ubuntu dab_plugin
 
     - name: Create package
       shell: sh
-      run: ./toolchains/windows/create_package.sh
+      run: ./toolchains/ubuntu/create_package.sh
 
     - name: Upload files (Release)
       uses: actions/upload-artifact@v3
       with:
-        name: sdrpp_dab_radio_plugin_windows
+        name: sdrpp_dab_radio_plugin_ubuntu
         path: ${{github.workspace}}/plugin_package
+    

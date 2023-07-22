@@ -2,7 +2,7 @@
 #include <core.h>
 #include <string>
 
-#include "dab_module.h"
+#include "./dab_module.h"
 
 #include <easylogging++.h>
 #include "dab/logging.h"
@@ -18,8 +18,8 @@ SDRPP_MOD_INFO{
 };
 
 MOD_EXPORT void _INIT_() {
-    bool is_logging = true;
-
+    // setup logging for DAB radio module
+    bool is_logging = false;
     auto dab_loggers = RegisterLogging();
     auto basic_radio_logger = el::Loggers::getLogger("basic-radio");
     auto basic_scraper_logger = el::Loggers::getLogger("basic-scraper");
@@ -45,7 +45,8 @@ MOD_EXPORT void _INIT_() {
 }
 
 MOD_EXPORT ModuleManager::Instance* _CREATE_INSTANCE_(std::string name) {
-    return new DABModule(name);
+    auto instance = new DABModule(name);
+    return instance;
 }
 
 MOD_EXPORT void _DELETE_INSTANCE_(void* instance) {

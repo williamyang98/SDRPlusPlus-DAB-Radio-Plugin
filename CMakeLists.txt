@@ -21,21 +21,31 @@ find_package(volk REQUIRED)
 # for dab plugin
 find_package(audio_mixer REQUIRED)
 
-# vcpkg
-find_package(OpenGL REQUIRED)
-find_package(glfw3 CONFIG REQUIRED)
-find_package(zstd CONFIG REQUIRED)
+
 # for dab modules
-find_package(FFTW3f CONFIG REQUIRED)
-set(FFTW3_LIBS FFTW3::fftw3f)
+if(DEFINED MSVC)
+    # vcpkg
+    find_package(FFTW3f CONFIG REQUIRED)
+    set(FFTW3_LIBS FFTW3::fftw3f)
+else()
+    # pkgconfig
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(fftw3f REQUIRED IMPORTED_TARGET fftw3f)
+    set(FFTW3_LIBS PkgConfig::fftw3f)
+endif()
+
 
 # compile sdrplusplus core module for plugin building
+# sdrpp_core imports libraries using vcpkg or pkgconfig
+# refer to ./toolchains/ubuntu/install_packages.sh or ./vcpkg.json for dependencies
+set(USE_INTERNAL_LIBCORRECT OFF CACHE BOOL "Use internal libcorrect")
 set(OPT_BACKEND_GLFW ON CACHE BOOL "Enable glfw backend")
 add_subdirectory(${CMAKE_SOURCE_DIR}/vendor/sdrplusplus/core)
 set_target_properties(sdrpp_core PROPERTIES CXX_STANDARD 17)
 
 
 # include libraries for dab modules
+# copied from ./vendor/DAB-Radio/CMakeLists.txt 
 set(DAB_RADIO_DIR ${CMAKE_SOURCE_DIR}/vendor/DAB-Radio)
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${DAB_RADIO_DIR}/cmake")
 find_package(faad2 REQUIRED)
