@@ -5,4 +5,3 @@ sudo apt-get --yes install libglfw3-dev libopengl-dev libfftw3-dev libfftw3-sing
 
 # install mako for volk build
 python -m pip install mako --quiet
-:wa
