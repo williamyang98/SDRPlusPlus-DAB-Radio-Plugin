@@ -1,15 +1,3 @@
-[submodule "vendor/fmt"]
-	path = vendor/fmt
-	url = https://github.com/fmtlib/fmt.git
-[submodule "vendor/faad2"]
-	path = vendor/faad2
-	url = https://github.com/knik0/faad2.git
-[submodule "easyloggingpp"]
-	path = easyloggingpp
-	url = https://github.com/amrayn/easyloggingpp.git
-[submodule "vendor/easyloggingpp"]
-	path = vendor/easyloggingpp
-	url = https://github.com/amrayn/easyloggingpp.git
 [submodule "vendor/volk"]
 	path = vendor/volk
 	url = https://github.com/gnuradio/volk.git
@@ -19,3 +7,6 @@
 [submodule "vendor/DAB-Radio"]
 	path = vendor/DAB-Radio
 	url = https://github.com/FiendChain/DAB-Radio
+[submodule "vendor/libcorrect"]
+	path = vendor/libcorrect
+	url = https://github.com/FiendChain/libcorrect

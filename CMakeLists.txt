@@ -24,11 +24,18 @@ set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 # refer to ./toolchains/ubuntu/install_packages.sh or ./vcpkg.json for dependencies
 if(DEFINED MSVC)
     set(USE_INTERNAL_LIBCORRECT OFF CACHE BOOL "Use internal libcorrect")
-    # volk binary needs to be built from source for windows since vcpkg doesn't have it
-    find_package(volk REQUIRED)
+    # we need to use our version of libcorrect due to ninja breaking on windows
+    # this is because static and dynamic versions of the same library have the same name 
+    # however on linux the output filenames are different so there isn't a conflict
+    find_package(libcorrect REQUIRED)
 else()
     set(USE_INTERNAL_LIBCORRECT ON CACHE BOOL "Use internal libcorrect")
+    # we need to use the internal library because sdrpp_core defaults to pkg-config
+    # however pkg-config cant find libcorrect because it is not a package in the repository
 endif()
+# we need to build volk from source because vcpkg doesn't have it
+# also when linking to it from ubuntu we get errors linking with our shared library plugin
+find_package(volk REQUIRED)
 set(OPT_BACKEND_GLFW ON CACHE BOOL "Enable glfw backend")
 add_subdirectory(${CMAKE_SOURCE_DIR}/vendor/sdrplusplus/core)
 set_target_properties(sdrpp_core PROPERTIES CXX_STANDARD 17)
@@ -57,6 +64,10 @@ endif()
 add_subdirectory(${DAB_RADIO_DIR}/src/ofdm)
 add_subdirectory(${DAB_RADIO_DIR}/src/dab)
 add_subdirectory(${DAB_RADIO_DIR}/src/basic_radio)
+# build dab plugin
+find_package(audio_mixer REQUIRED)
+add_subdirectory(${CMAKE_SOURCE_DIR}/src)
+
 # simd and math compile options
 function(set_simd_options target)
     if(NOT ${CMAKE_SYSTEM_PROCESSOR} STREQUAL "aarch64")
@@ -74,9 +85,7 @@ function(set_simd_options target)
 endfunction()
 set_simd_options(ofdm_core)
 set_simd_options(dab_core)
+set_simd_options(audio_mixer)
+set_simd_options(dab_plugin)
 
-
-# build dab plugin
-find_package(audio_mixer REQUIRED)
-add_subdirectory(${CMAKE_SOURCE_DIR}/src)
 
