@@ -38,7 +38,9 @@ endif()
 # compile sdrplusplus core module for plugin building
 # sdrpp_core imports libraries using vcpkg or pkgconfig
 # refer to ./toolchains/ubuntu/install_packages.sh or ./vcpkg.json for dependencies
-set(USE_INTERNAL_LIBCORRECT OFF CACHE BOOL "Use internal libcorrect")
+if(NOT DEFINED MSVC)
+    set(USE_INTERNAL_LIBCORRECT ON CACHE BOOL "Use internal libcorrect")
+endif()
 set(OPT_BACKEND_GLFW ON CACHE BOOL "Enable glfw backend")
 add_subdirectory(${CMAKE_SOURCE_DIR}/vendor/sdrplusplus/core)
 set_target_properties(sdrpp_core PROPERTIES CXX_STANDARD 17)
