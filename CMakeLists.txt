@@ -58,21 +58,22 @@ add_subdirectory(${DAB_RADIO_DIR}/src/ofdm)
 add_subdirectory(${DAB_RADIO_DIR}/src/dab)
 add_subdirectory(${DAB_RADIO_DIR}/src/basic_radio)
 # simd and math compile options
-if(NOT ${CMAKE_SYSTEM_PROCESSOR} STREQUAL "aarch64")
-    if(DEFINED MSVC)
-        # NOTE: If your CPU doesn't support these instructions, modify /arch:?
-        target_compile_options(ofdm_core PRIVATE /fp:fast /arch:AVX2)
-        target_compile_options(dab_core PRIVATE /fp:fast /arch:AVX2)
+function(set_simd_options target)
+    if(NOT ${CMAKE_SYSTEM_PROCESSOR} STREQUAL "aarch64")
+        if(DEFINED MSVC)
+            # NOTE: If your CPU doesn't support these instructions, modify /arch:?
+            target_compile_options(${target} PRIVATE /fp:fast /arch:AVX2)
+        else()
+            # NOTE: We are optimising specifically for your CPU's microarchitecture
+            #       This is okay since we don't ship prebuilt binaries for linux distributions
+            target_compile_options(${target} PRIVATE -march=native -ffast-math)
+        endif()
     else()
-        # NOTE: We are optimising specifically for your CPU's microarchitecture
-        #       This is okay since we don't ship prebuilt binaries for linux distributions
-        target_compile_options(ofdm_core PRIVATE -march=native -ffast-math)
-        target_compile_options(dab_core PRIVATE -march=native -ffast-math)
+        target_compile_options(${target} PRIVATE -ffast-math)
     endif()
-else()
-    target_compile_options(ofdm_core PRIVATE -ffast-math)
-    target_compile_options(dab_core PRIVATE -ffast-math)
-endif()
+endfunction()
+set_simd_options(ofdm_core)
+set_simd_options(dab_core)
 
 
 # build dab plugin
