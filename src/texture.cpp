@@ -18,7 +18,7 @@ Texture::Texture(ImTextureID id, int width, int height)
 {}
 
 Texture::~Texture() {
-    const GLuint id = reinterpret_cast<GLuint>(m_id);
+    const GLuint id = GLuint(m_id);
     glDeleteTextures(1, &id);
 }
 
@@ -55,5 +55,5 @@ std::unique_ptr<Texture> Texture::LoadFromMemory(const uint8_t* data, const size
     // stbi_set_flip_vertically_on_load(1);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
     stbi_image_free(image_data);
-    return std::make_unique<Texture>(reinterpret_cast<void*>(id), width, height);
+    return std::make_unique<Texture>((void*)(id), width, height);
 }
