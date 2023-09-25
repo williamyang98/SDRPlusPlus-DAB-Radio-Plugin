@@ -57,6 +57,18 @@ void ClampValue(int& value, int min, int max) {
     }
 }
 
+std::string convert_frequency_to_string(freq_t freq) {
+    if (freq >= 1'000'000'000) {
+        return fmt::format("{:3.3} GHz", static_cast<float>(freq)*1e-9f);
+    } else if (freq >= 1'000'000) {
+        return fmt::format("{:3.3} MHz", static_cast<float>(freq)*1e-6f);
+    } else if (freq >= 1'000) {
+        return fmt::format("{:3.3} kHz", static_cast<float>(freq)*1e-3f);
+    } else {
+        return fmt::format("{:3} Hz", static_cast<float>(freq));
+    }
+}
+
 // ofdm demodulator
 void RenderOFDMState(OFDM_Demod& demod);
 void RenderOFDMControls(OFDM_Demod& demod);
@@ -292,14 +304,16 @@ void RenderRadioService(DAB_Decoder_ImGui& ctx) {
 
     auto* service = db.GetService(ctx.focused_service_id);
     if (service == nullptr) {
+        ImGui::Text("Please select a service");
         return;
     }
 
     auto* service_components = db.GetServiceComponents(service->reference);
-    if (service_components == nullptr) {
+    if ((service_components == nullptr) || (service_components->size() == 0)) {
+        ImGui::Text("Service does not have any service components");
         return;
     }
-    
+
     ServiceComponent* service_component = nullptr;
     if (service_components->size() == 1) {
         for (auto _component: *service_components) {
@@ -321,11 +335,13 @@ void RenderRadioService(DAB_Decoder_ImGui& ctx) {
         }
     }
     if (service_component == nullptr) {
+        ImGui::Text("Service component is not available yet");
         return;
     }
 
     auto subchannel = db.GetSubchannel(service_component->subchannel_id);
     if (subchannel == nullptr) {
+        ImGui::Text("Subchannel is not available yet");
         return;
     }
 
@@ -365,12 +381,11 @@ void RenderRadioService(DAB_Decoder_ImGui& ctx) {
         const bool is_codec_found = superframe_header.sampling_rate != 0;
         if (is_codec_found) {
             const char* mpeg_surround = GetMPEGSurroundString(superframe_header.mpeg_surround);
-            return fmt::format("DAB+ {}Hz {} {} {} @ {} kbp/s", 
+            return fmt::format("DAB+ {}Hz {} {} {}", 
                 superframe_header.sampling_rate, 
                 superframe_header.is_stereo ? "Stereo" : "Mono",  
                 GetAACDescriptionString(superframe_header.SBR_flag, superframe_header.PS_flag),
-                mpeg_surround ? mpeg_surround : "",
-                bitrate_kbps
+                mpeg_surround ? mpeg_surround : ""
             );
         } else {
             return std::string("DAB+ (no codec info)");
@@ -384,6 +399,19 @@ void RenderRadioService(DAB_Decoder_ImGui& ctx) {
 
     ImGui::Separator();
 
+    {
+        ImGui::RadioButton("Firecode", !channel->IsFirecodeError());
+        ImGui::SameLine();
+        ImGui::RadioButton("Reed Solomon", !channel->IsRSError());
+        ImGui::SameLine();
+        ImGui::RadioButton("Access Unit", !channel->IsAUError());
+        ImGui::SameLine();
+        ImGui::RadioButton("Codec", !channel->IsCodecError());
+    }
+
+    ImGui::Separator();
+    
+    // Helper macro to layout table rows
     #define FIELD_MACRO(name, fmt, ...) {\
         ImGui::PushID(row_id++);\
         ImGui::TableNextRow();\
@@ -393,20 +421,22 @@ void RenderRadioService(DAB_Decoder_ImGui& ctx) {
         ImGui::TextWrapped(fmt, __VA_ARGS__);\
         ImGui::PopID();\
     }\
-    
-    {
-        ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable | ImGuiTableFlags_Borders;
-        if (ImGui::BeginTable("Status", 2, flags)) {
-            ImGui::TableSetupColumn("Decoding Stage", ImGuiTableColumnFlags_WidthStretch);
-            ImGui::TableSetupColumn("Status", ImGuiTableColumnFlags_WidthStretch);
-            ImGui::TableHeadersRow();
 
-            int row_id  = 0;
-            FIELD_MACRO("Firecode", "%s", channel->IsFirecodeError() ? "Error" : "Good");
-            FIELD_MACRO("Reed Solomon", "%s", channel->IsRSError() ? "Error" : "Good");
-            FIELD_MACRO("Access Unit CRC", "%s", channel->IsAUError() ? "Error" : "Good");
-            FIELD_MACRO("AAC Decoder", "%s", channel->IsCodecError() ? "Error" : "Good");
-            
+    {
+        ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
+        auto& ensemble = *db.GetEnsemble();
+        if (ImGui::BeginTable("Service Description", 2, flags)) {
+            int row_id = 0;
+            FIELD_MACRO("Programme Type", "%s (%u)", 
+                GetProgrammeTypeString(ensemble.international_table_id, service->programme_type),
+                service->programme_type);
+            FIELD_MACRO("Language", "%s (%u)", GetLanguageTypeString(service->language), service->language);
+            FIELD_MACRO("Closed Caption", "%u", service->closed_caption);
+            FIELD_MACRO("Country Code", "0x%02X.%01X", service->extended_country_code, service->country_id);
+            FIELD_MACRO("Country Name", "%s", GetCountryString(
+                service->extended_country_code ? service->extended_country_code : ensemble.extended_country_code, 
+                service->country_id ? service->country_id : ensemble.country_id));
+
             ImGui::EndTable();
         }
     }
@@ -460,14 +490,9 @@ void RenderRadioService(DAB_Decoder_ImGui& ctx) {
                             ImGui::SetTooltip("%.*s", int(slideshow->name.length()), slideshow->name.c_str());
                         }
 
-                        ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable | ImGuiTableFlags_Borders;
+                        ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
                         if (ImGui::BeginTable("Status", 2, flags)) {
-                            ImGui::TableSetupColumn("Field", ImGuiTableColumnFlags_WidthStretch);
-                            ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
-                            ImGui::TableHeadersRow();
-
                             int row_id  = 0;
-
                             FIELD_MACRO("Subchannel ID", "%u", subchannel->id);
                             FIELD_MACRO("Transport ID", "%u", slideshow->transport_id);
                             FIELD_MACRO("Name", "%.*s", int(slideshow->name.length()), slideshow->name.c_str());
@@ -521,13 +546,10 @@ void RenderRadioService(DAB_Decoder_ImGui& ctx) {
                 }
                 
                 if (linked_service != nullptr) {
-                    static ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable | ImGuiTableFlags_Borders;
+                    ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
                     // Description header
                     ImGui::Text("Link Service Description");
                     if (ImGui::BeginTable("LSN Description", 2, flags)) {
-                        ImGui::TableSetupColumn("Field", ImGuiTableColumnFlags_WidthStretch);
-                        ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
-                        ImGui::TableHeadersRow();
                         int row_id = 0;
                         FIELD_MACRO("LSN", "%u", linked_service->id);
                         FIELD_MACRO("Active", "%s", linked_service->is_active_link ? "Yes" : "No");
@@ -557,17 +579,7 @@ void RenderRadioService(DAB_Decoder_ImGui& ctx) {
                                 ImGui::TableSetColumnIndex(2);
                                 auto& frequencies = fm_service->frequencies;
                                 for (auto& freq: frequencies) {
-                                    std::string label;
-                                    if (freq >= 1'000'000'000) {
-                                        label = fmt::format("{:3.3} GHz", static_cast<float>(freq)*1e-9f);
-                                    } else if (freq >= 1'000'000) {
-                                        label = fmt::format("{:3.3} MHz", static_cast<float>(freq)*1e-6f);
-                                    } else if (freq >= 1'000) {
-                                        label = fmt::format("{:3.3} kHz", static_cast<float>(freq)*1e-3f);
-                                    } else {
-                                        label = fmt::format("{:3} Hz", static_cast<float>(freq));
-                                    }
-
+                                    std::string label = convert_frequency_to_string(freq);
                                     if (ImGui::Selectable(label.c_str(), false)) {
                                         tuner::tune(tuner::TUNER_MODE_NORMAL, gui::waterfall.selectedVFO, static_cast<double>(freq));
                                     }
@@ -602,7 +614,10 @@ void RenderRadioService(DAB_Decoder_ImGui& ctx) {
                                 ImGui::TableSetColumnIndex(2);
                                 auto& frequencies = drm_service->frequencies;
                                 for (auto& freq: frequencies) {
-                                    ImGui::Text("%3.3f MHz", static_cast<float>(freq)*1e-6f);
+                                    std::string label = convert_frequency_to_string(freq);
+                                    if (ImGui::Selectable(label.c_str(), false)) {
+                                        tuner::tune(tuner::TUNER_MODE_NORMAL, gui::waterfall.selectedVFO, static_cast<double>(freq));
+                                    }
                                 }
                                 ImGui::PopID();
                             }
@@ -620,12 +635,8 @@ void RenderRadioService(DAB_Decoder_ImGui& ctx) {
         }
 
         if (ImGui::BeginTabItem("Subchannel")) {
-            ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable | ImGuiTableFlags_Borders;
+            ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
             if (ImGui::BeginTable("Details", 2, flags)) {
-                ImGui::TableSetupColumn("Field", ImGuiTableColumnFlags_WidthStretch);
-                ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
-                ImGui::TableHeadersRow();
-
                 int row_id  = 0;
                 const auto prot_label = GetSubchannelProtectionLabel(*subchannel);
                 const uint32_t bitrate_kbps = GetSubchannelBitrate(*subchannel);
@@ -642,12 +653,8 @@ void RenderRadioService(DAB_Decoder_ImGui& ctx) {
         }
 
         if (ImGui::BeginTabItem("Component")) {
-            ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable | ImGuiTableFlags_Borders;
+            ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
             if (ImGui::BeginTable("Service Component", 2, flags)) {
-                ImGui::TableSetupColumn("Field", ImGuiTableColumnFlags_WidthStretch);
-                ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
-                ImGui::TableHeadersRow();
-
                 int row_id  = 0;
                 const bool is_audio_type = (service_component->transport_mode == TransportMode::STREAM_MODE_AUDIO);
                 const char* type_str = is_audio_type ? 
@@ -673,12 +680,8 @@ void RenderRadioService(DAB_Decoder_ImGui& ctx) {
 
 void RenderRadioStatistics(BasicRadio& radio) {
     const auto stats = radio.GetDatabaseManager().GetDatabaseStatistics();
-    ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable | ImGuiTableFlags_Borders;
+    ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
     if (ImGui::BeginTable("Date & Time", 2, flags)) {
-        ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthStretch);
-        ImGui::TableSetupColumn("Count", ImGuiTableColumnFlags_WidthStretch);
-        ImGui::TableHeadersRow();
-
         #define FIELD_MACRO(name, fmt, ...) {\
             ImGui::PushID(row_id++);\
             ImGui::TableNextRow();\
@@ -705,12 +708,8 @@ void RenderRadioEnsemble(BasicRadio& radio) {
     auto& db = radio.GetDatabaseManager().GetDatabase();
     auto& ensemble = db.ensemble;
 
-    ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable | ImGuiTableFlags_Borders;
+    ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
     if (ImGui::BeginTable("Ensemble description", 2, flags)) {
-        ImGui::TableSetupColumn("Field", ImGuiTableColumnFlags_WidthStretch);
-        ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
-        ImGui::TableHeadersRow();
-
         #define FIELD_MACRO(name, fmt, ...) {\
             ImGui::PushID(row_id++);\
             ImGui::TableNextRow();\
@@ -740,12 +739,8 @@ void RenderRadioEnsemble(BasicRadio& radio) {
 
 void RenderRadioDateTime(BasicRadio& radio) {
     const auto info = radio.GetDatabaseManager().GetDABMiscInfo();
-    ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable | ImGuiTableFlags_Borders;
+    ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
     if (ImGui::BeginTable("Date & Time", 2, flags)) {
-        ImGui::TableSetupColumn("Field", ImGuiTableColumnFlags_WidthStretch);
-        ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
-        ImGui::TableHeadersRow();
-
         #define FIELD_MACRO(name, fmt, ...) {\
             ImGui::PushID(row_id++);\
             ImGui::TableNextRow();\
