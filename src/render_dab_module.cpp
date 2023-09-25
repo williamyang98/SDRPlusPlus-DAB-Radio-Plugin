@@ -47,6 +47,16 @@ Texture* DAB_Decoder_ImGui::TryGetSlideshowTexture(
     return res->get();
 }
 
+// We need to manually clamp values since ImGui_AlwaysClamp doesn't work
+void ClampValue(int& value, int min, int max) {
+    if (value < min) {
+        value = min;
+    }
+    if (value > max) {
+        value = max;
+    }
+}
+
 // ofdm demodulator
 void RenderOFDMState(OFDM_Demod& demod);
 void RenderOFDMControls(OFDM_Demod& demod);
@@ -298,7 +308,9 @@ void RenderRadioService(DAB_Decoder_ImGui& ctx) {
         }
     } else {
         static int selected_index = 0;
-        ImGui::SliderInt("Component", &selected_index, 0, service_components->size(), "%d", ImGuiSliderFlags_AlwaysClamp);
+        const int total_service_components = service_components->size();
+        ImGui::SliderInt("Component", &selected_index, 0, total_service_components-1, "%d", ImGuiSliderFlags_AlwaysClamp);
+        ClampValue(selected_index, 0, total_service_components-1);
         int index = 0;
         for (auto _component: *service_components) {
             if (index == selected_index) {
@@ -413,6 +425,7 @@ void RenderRadioService(DAB_Decoder_ImGui& ctx) {
 
                 if (total_slideshows > 1) {
                     ImGui::SliderInt("###Image", &slideshow_index, 0, total_slideshows-1, "%d", ImGuiSliderFlags_AlwaysClamp);
+                    ClampValue(slideshow_index, 0, total_slideshows-1);
                 } else {
                     slideshow_index = 0;
                 }
@@ -490,6 +503,7 @@ void RenderRadioService(DAB_Decoder_ImGui& ctx) {
 
                 if (total_linked_services > 1) {
                     ImGui::SliderInt("Linked Service", &selected_link_index, 0, total_linked_services-1, "%d", ImGuiSliderFlags_AlwaysClamp);
+                    ClampValue(selected_link_index, 0, total_linked_services-1);
                 } else {
                     selected_link_index = 0;
                 }
