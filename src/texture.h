@@ -8,17 +8,17 @@
 class Texture
 {
 private:
-    const ImTextureID m_id;
+    const uint32_t m_id;
     const int m_width; 
     const int m_height;
 public:
-    Texture(ImTextureID id, int width, int height);
+    Texture(uint32_t id, int width, int height);
     ~Texture();
     Texture(Texture&) = delete;
     Texture(Texture&&) = delete;
     Texture& operator=(Texture&) = delete;
     Texture& operator=(Texture&&) = delete;
-    ImTextureID GetTextureID() const { return m_id; }
+    uint32_t GetTextureID() const { return m_id; }
     inline int GetWidth() const { return m_width; }
     inline int GetHeight() const { return m_height; }
 public:

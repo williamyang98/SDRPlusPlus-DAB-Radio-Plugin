@@ -13,7 +13,7 @@
 #define STBI_ONLY_JPEG
 #include <imgui/stb_image.h>
 
-Texture::Texture(ImTextureID id, int width, int height)
+Texture::Texture(uint32_t id, int width, int height)
 : m_id(id), m_width(width), m_height(height) 
 {}
 
@@ -28,7 +28,7 @@ std::unique_ptr<Texture> Texture::LoadFromMemory(const uint8_t* data, const size
     int height = 0;
     int bits_per_pixel = 0;
     uint8_t* image_data = stbi_load_from_memory(
-        data, total_bytes, 
+        data, int(total_bytes), 
         &width, &height, &bits_per_pixel, 4
     );
 
@@ -55,5 +55,5 @@ std::unique_ptr<Texture> Texture::LoadFromMemory(const uint8_t* data, const size
     // stbi_set_flip_vertically_on_load(1);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
     stbi_image_free(image_data);
-    return std::make_unique<Texture>((void*)(id), width, height);
+    return std::make_unique<Texture>(id, width, height);
 }

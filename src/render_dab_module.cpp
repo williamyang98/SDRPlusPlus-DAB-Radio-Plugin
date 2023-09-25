@@ -442,7 +442,7 @@ void RenderRadioService(DAB_Decoder_ImGui& ctx) {
                             static_cast<float>(texture->GetWidth()) * scale, 
                             static_cast<float>(texture->GetHeight()) * scale
                         );
-                        ImGui::Image(texture_id, texture_size);
+                        ImGui::Image(ImTextureID(texture_id), texture_size);
                         if (ImGui::IsItemHovered()) {
                             ImGui::SetTooltip("%.*s", int(slideshow->name.length()), slideshow->name.c_str());
                         }
@@ -469,7 +469,7 @@ void RenderRadioService(DAB_Decoder_ImGui& ctx) {
 
                             if (texture != NULL) {
                                 FIELD_MACRO("Resolution", "%u x %u", texture->GetWidth(), texture->GetHeight());
-                                FIELD_MACRO("Internal Texture ID", "%" PRIuPTR, uintptr_t(texture->GetTextureID()));
+                                FIELD_MACRO("Internal Texture ID", "%" PRIu32, texture->GetTextureID());
                             }
 
                             ImGui::EndTable();
