@@ -75,6 +75,7 @@ DABModule::DABModule(std::string _name)
 
     const int TRANSMISSION_MODE = 1;
     dab_decoder = std::make_shared<DAB_Decoder>(TRANSMISSION_MODE);
+    dab_decoder_imgui = std::make_unique<DAB_Decoder_ImGui>(*(dab_decoder.get()));
     decoder_sink = std::make_unique<DAB_Decoder_Sink>(dab_decoder);
     audio_player_stream = std::make_unique<Audio_Player_Stream>(dab_decoder->GetAudioPlayer());
 
@@ -165,7 +166,7 @@ bool DABModule::isEnabled() { return is_enabled; }
 void DABModule::RenderMenu() {
     const bool is_disabled = !is_enabled;
     if (is_disabled) style::beginDisabled();
-    RenderDABModule(dab_decoder_imgui, *dab_decoder.get());
+    RenderDABModule(*dab_decoder_imgui.get());
     if (is_disabled) style::endDisabled();
 }
 

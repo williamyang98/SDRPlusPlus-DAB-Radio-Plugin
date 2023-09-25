@@ -5,3 +5,4 @@ build-*/
 .cache/
 plugin_package/
 plugin_package.zip
+venv/

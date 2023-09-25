@@ -17,6 +17,7 @@ add_library(dab_plugin SHARED
     ${SRC_DIR}/audio_player.cpp
     ${SRC_DIR}/render_dab_module.cpp
     ${SRC_DIR}/render_formatters.cpp
+    ${SRC_DIR}/texture.cpp
 )
 set_target_properties(dab_plugin PROPERTIES CXX_STANDARD 17)
 target_include_directories(dab_plugin PRIVATE ${SRC_DIR} ${ROOT_DIR} ${AUDIO_DIR})
