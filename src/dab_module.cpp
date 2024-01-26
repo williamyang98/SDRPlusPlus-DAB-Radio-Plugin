@@ -120,7 +120,7 @@ DABModule::~DABModule() {
 
 void DABModule::enable() { 
     is_enabled = true; 
-    if (!vfo) {
+    if (vfo == nullptr) {
         // NOTE: Use the entire 2.048e6 frequency range so that if we have a large
         //       frequency offset the VFO doesn't low pass filter out subcarriers
         const float MIN_BANDWIDTH = 2.048e6f;
@@ -137,7 +137,7 @@ void DABModule::enable() {
 }
 void DABModule::disable() { 
     is_enabled = false; 
-    if (vfo) {
+    if (vfo != nullptr) {
         ofdm_demodulator_sink->stop();
         sigpath::vfoManager.deleteVFO(vfo);
         vfo = nullptr;

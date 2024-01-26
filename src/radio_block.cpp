@@ -34,9 +34,11 @@ Radio_Block::Radio_Block(size_t ofdm_total_threads, size_t dab_total_threads)
         while (m_is_radio_thread_running) {
             const size_t length = m_ofdm_to_radio_buffer->read(data);
             if (length != data.size()) break;
-            auto lock = std::scoped_lock(m_mutex_basic_radio);
+            auto lock = std::unique_lock(m_mutex_basic_radio);
             if (m_basic_radio == nullptr) continue;
-            m_basic_radio->Process(data);
+            auto radio = m_basic_radio;
+            lock.unlock(); // prevent locking in gui thread
+            radio->Process(data);
         }
     });
     // setup audio
@@ -62,13 +64,14 @@ void Radio_Block::reset_radio() {
             auto audio_source = std::make_shared<AudioPipelineSource>();
             audio_pipeline->add_source(audio_source);
             channel.OnAudioData().Attach(
-                [&controls, audio_source]
+                [&controls, audio_source, audio_pipeline]
                 (BasicAudioParams params, tcb::span<const uint8_t> buf) {
                     if (!controls.GetIsPlayAudio()) return;
                     auto frame_ptr = reinterpret_cast<const Frame<int16_t>*>(buf.data());
                     const size_t total_frames = buf.size() / sizeof(Frame<int16_t>);
                     auto frame_buf = tcb::span(frame_ptr, total_frames);
-                    audio_source->write(frame_buf, float(params.frequency), false);
+                    const bool is_blocking = audio_pipeline->get_sink() != nullptr;
+                    audio_source->write(frame_buf, float(params.frequency), is_blocking);
                 }
             );
         }
