@@ -42,7 +42,7 @@ jobs:
     - name: Setup vcpkg with caching
       uses: friendlyanon/setup-vcpkg@v1
       with: 
-        committish: c9f906558f9bb12ee9811d6edc98ec9255c6cda5
+        committish: c9140a3b500812ad3206317885860d9553b93f13
         path: vcpkg
 
     - name: Install python mako
