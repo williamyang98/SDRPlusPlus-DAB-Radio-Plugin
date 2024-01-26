@@ -13,9 +13,8 @@ add_library(dab_plugin SHARED
     ${SRC_DIR}/main.cpp
     ${SRC_DIR}/dab_module.cpp
     # glue code
-    ${SRC_DIR}/dab_decoder.cpp
-    ${SRC_DIR}/audio_player.cpp
-    ${SRC_DIR}/render_dab_module.cpp
+    ${SRC_DIR}/radio_block.cpp
+    ${SRC_DIR}/render_radio_block.cpp
     ${SRC_DIR}/render_formatters.cpp
     ${SRC_DIR}/texture.cpp
 )

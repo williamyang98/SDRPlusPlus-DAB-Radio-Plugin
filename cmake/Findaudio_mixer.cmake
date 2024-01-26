@@ -7,7 +7,6 @@ set(SRC_DIR ${DAB_RADIO_DIR}/examples/audio)
 set(ROOT_DIR ${DAB_RADIO_DIR}/src)
 
 add_library(audio_mixer STATIC 
-    ${SRC_DIR}/resampled_pcm_player.cpp
-    ${SRC_DIR}/audio_mixer.cpp)
+    ${SRC_DIR}/audio_pipeline.cpp)
 set_target_properties(audio_mixer PROPERTIES CXX_STANDARD 17)
 target_include_directories(audio_mixer PUBLIC ${SRC_DIR} ${ROOT_DIR})

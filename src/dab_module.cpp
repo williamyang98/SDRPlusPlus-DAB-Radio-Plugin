@@ -1,105 +1,95 @@
-#include "dab_module.h"
-
+#include "./dab_module.h"
+#include <complex>
+#include <string>
 #include <imgui/imgui.h>
 #include <imgui/imgui_internal.h>
 #include <gui/gui.h>
 #include <gui/style.h>
-
 #include <module.h>
-#include <signal_path/signal_path.h>
 #include <dsp/sink.h>
-#include <complex>
-#include <string>
-
-#include "./dab_decoder.h"
-#include "./audio_player.h"
-#include "./render_dab_module.h"
+#include <signal_path/signal_path.h>
+#include "./radio_block.h"
+#include "./render_radio_block.h"
+#include "utility/span.h"
 
 ConfigManager config; // extern
 
-DAB_Decoder_Sink::DAB_Decoder_Sink(std::shared_ptr<DAB_Decoder> _decoder) 
-: decoder(_decoder) {}
-
-DAB_Decoder_Sink::~DAB_Decoder_Sink() {
-    if (!base_type::_block_init) return;
-    base_type::stop();
-}
-
-int DAB_Decoder_Sink::run() {
+int OFDM_Demodulator_Sink::run() {
     int count = base_type::_in->read();
-    if (count < 0) { return -1; }
-
+    if (count < 0) return -1;
     auto* buf = base_type::_in->readBuf;
-    Process(reinterpret_cast<std::complex<float>*>(buf), count);
-
+    auto block = tcb::span(reinterpret_cast<std::complex<float>*>(buf), size_t(count));
+    m_ofdm_demod->Process(block);
     base_type::_in->flush();
     return count;
 }
 
-void DAB_Decoder_Sink::Process(const std::complex<float>* x, const int N) {
-    decoder->Process({ x, (size_t)N });
-}
-
-Audio_Player_Stream::Audio_Player_Stream(AudioPlayer& audio_player)
+Audio_Player_Stream::Audio_Player_Stream(float sample_rate, float block_size_seconds)
+: m_sample_rate(sample_rate), m_block_size_seconds(block_size_seconds)
 {
-    output_stream.clearReadStop();
-    output_stream.clearWriteStop();
-
-    audio_player.OnBlock().Attach([this](tcb::span<const Frame<float>> rd_buf) {
-        Process(rd_buf);
-    });
+    m_is_running = false;
+    m_callback = nullptr;
+    m_output_thread = nullptr;
+    m_output_stream.clearReadStop();
+    m_output_stream.clearWriteStop();
 }
 
 Audio_Player_Stream::~Audio_Player_Stream() {
-    output_stream.stopReader();
-    output_stream.stopWriter();
+    m_output_stream.stopReader();
+    m_output_stream.stopWriter();
+    auto lock = std::unique_lock(m_mutex_callback);
+    m_is_running = false;
+    if (m_output_thread != nullptr) {
+        m_output_thread->join();
+    }
 };
 
-void Audio_Player_Stream::Process(tcb::span<const Frame<float>> rd_buf) {
-    auto wr_buf = output_stream.writeBuf;
-    const size_t N = rd_buf.size();
-    const float A = 1.0f;
-    for (size_t i = 0; i < N; i++) {
-        wr_buf[i].l = rd_buf[i].channels[0] * A;
-        wr_buf[i].r = rd_buf[i].channels[1] * A;
+void Audio_Player_Stream::set_callback(AudioPipelineSink::Callback callback) {
+    auto lock = std::unique_lock(m_mutex_callback);
+    m_is_running = false;
+    if (m_output_thread != nullptr) {
+        m_output_thread->join();
     }
-    output_stream.swap(N);
+    m_callback = callback;
+    m_output_thread = nullptr;
+    if (m_callback == nullptr) return;
+    m_is_running = true;
+    m_output_thread = std::make_unique<std::thread>([this, callback]() {
+        while (m_is_running) {
+            const size_t block_size = size_t(m_sample_rate*m_block_size_seconds);
+            auto wr_buf = m_output_stream.writeBuf; // default buffer size is 1 million (we can avoid resizing)
+            auto frame_buf = tcb::span(reinterpret_cast<Frame<float>*>(wr_buf), block_size);
+            callback(frame_buf, m_sample_rate); 
+            m_output_stream.swap(int(block_size)); // blocking call
+        }
+    });
 }
-
 
 DABModule::DABModule(std::string _name) 
 {
     name = _name;
     is_enabled = false;
-    vfo = NULL;
-
-    const int TRANSMISSION_MODE = 1;
-    dab_decoder = std::make_shared<DAB_Decoder>(TRANSMISSION_MODE);
-    dab_decoder_imgui = std::make_unique<DAB_Decoder_ImGui>(*(dab_decoder.get()));
-    decoder_sink = std::make_unique<DAB_Decoder_Sink>(dab_decoder);
-    audio_player_stream = std::make_unique<Audio_Player_Stream>(dab_decoder->GetAudioPlayer());
-
-    ev_handler_sample_rate_change.ctx = this;
+    vfo = nullptr;
+ 
+    // setup radio
+    radio_block = std::make_unique<Radio_Block>(1,1);
+    ofdm_demodulator_sink = std::make_unique<OFDM_Demodulator_Sink>(radio_block->get_ofdm_demodulator());
+    radio_view_controller = std::make_unique<Radio_View_Controller>();
+    // setup audio
+    const float DEFAULT_AUDIO_SAMPLE_RATE = 48000.0f;
+    auto audio_player_stream = std::make_unique<Audio_Player_Stream>(DEFAULT_AUDIO_SAMPLE_RATE, 0.1f);
+    ev_handler_sample_rate_change.ctx = audio_player_stream.get();
     ev_handler_sample_rate_change.handler = [](float sample_rate, void* ctx) {
-        auto* e = reinterpret_cast<DABModule*>(ctx);
-        e->OnSampleRateChange(sample_rate);
+        auto* stream = reinterpret_cast<Audio_Player_Stream*>(ctx);
+        stream->set_sample_rate(sample_rate);
     };
-
-    const int Faudio_in = (int)dab_decoder->GetAudioPlayer().GetSampleRate();
-
-    audio_resampler.init(
-        &(audio_player_stream->GetOutputStream()),
-        Faudio_in, Faudio_in);
-
-    audio_stream.init(
-        &audio_resampler.out, 
-        &ev_handler_sample_rate_change, 
-        Faudio_in);
+    audio_stream.init(&audio_player_stream->get_output_stream(), &ev_handler_sample_rate_change, DEFAULT_AUDIO_SAMPLE_RATE);
     audio_stream.setVolume(1.0f);
     sigpath::sinkManager.registerStream(name, &audio_stream);
     audio_stream.start();
-    audio_resampler.start();
-
+    auto audio_pipeline = radio_block->get_audio_pipeline();
+    audio_pipeline->set_sink(std::move(audio_player_stream));
+    // setup gui
     gui::menu.registerEntry(name, [](void *ctx) {
         auto* mod = reinterpret_cast<DABModule*>(ctx);
         mod->RenderMenu();
@@ -120,16 +110,13 @@ DABModule::DABModule(std::string _name)
 }
 
 DABModule::~DABModule() {
-    audio_resampler.stop();
     audio_stream.stop();
     if (isEnabled()) {
-        decoder_sink->stop();
+        ofdm_demodulator_sink->stop();
         sigpath::vfoManager.deleteVFO(vfo);
     }
     sigpath::sinkManager.unregisterStream(name);
 }
-
-void DABModule::postInit() {}
 
 void DABModule::enable() { 
     is_enabled = true; 
@@ -140,8 +127,8 @@ void DABModule::enable() {
         vfo = sigpath::vfoManager.createVFO(
             name, ImGui::WaterfallVFO::REF_CENTER,
             0, MIN_BANDWIDTH, MIN_BANDWIDTH, MIN_BANDWIDTH, MIN_BANDWIDTH, true);
-        decoder_sink->setInput(vfo->output);
-        decoder_sink->start();
+        ofdm_demodulator_sink->setInput(vfo->output);
+        ofdm_demodulator_sink->start();
     }
 
     config.acquire();
@@ -151,9 +138,9 @@ void DABModule::enable() {
 void DABModule::disable() { 
     is_enabled = false; 
     if (vfo) {
-        decoder_sink->stop();
+        ofdm_demodulator_sink->stop();
         sigpath::vfoManager.deleteVFO(vfo);
-        vfo = NULL;
+        vfo = nullptr;
     }
 
     config.acquire();
@@ -161,15 +148,9 @@ void DABModule::disable() {
     config.release(true);
 }
 
-bool DABModule::isEnabled() { return is_enabled; }
-
 void DABModule::RenderMenu() {
     const bool is_disabled = !is_enabled;
     if (is_disabled) style::beginDisabled();
-    RenderDABModule(*dab_decoder_imgui.get());
+    Render_Radio_Block(*radio_block, *radio_view_controller);
     if (is_disabled) style::endDisabled();
-}
-
-void DABModule::OnSampleRateChange(float new_sample_rate) {
-    audio_resampler.setOutSamplerate(new_sample_rate);
 }
