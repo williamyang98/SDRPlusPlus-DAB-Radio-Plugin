@@ -31,10 +31,6 @@ static T* find_by_callback(std::vector<T>& vec, F&& func) {
     return nullptr;
 }
 
-static uint32_t GetSlideshowKey(subchannel_id_t subchannel_id, mot_transport_id_t transport_id) {
-    return (subchannel_id << 16) | transport_id;
-}
-
 // We need to manually clamp values since ImGui_AlwaysClamp doesn't work
 static void ClampValue(int& value, int min, int max) {
     if (value < min) {
@@ -75,7 +71,7 @@ Texture* Radio_View_Controller::TryGetSlideshowTexture(
     subchannel_id_t subchannel_id, mot_transport_id_t transport_id, 
     tcb::span<const uint8_t> data)
 {
-    const uint32_t key = GetSlideshowKey(subchannel_id, transport_id);
+    const uint32_t key = (subchannel_id << 16) | transport_id;
     auto* res = slideshow_textures_cache.find(key);
     if (res == nullptr) {
         auto& v = slideshow_textures_cache.emplace(key, Texture::LoadFromMemory(data.data(), data.size()));

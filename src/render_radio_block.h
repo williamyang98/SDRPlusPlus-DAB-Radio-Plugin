@@ -2,28 +2,18 @@
 
 #include <stdint.h>
 #include <memory>
-#include <set>
-#include <optional>
 #include <gui/widgets/constellation_diagram.h>
 #include "dab/database/dab_database_types.h"
 #include "dab/mot/MOT_entities.h"
 #include "utility/lru_cache.h"
-
-#include "./texture.h"
 #include "utility/span.h"
+#include "./texture.h"
 
-struct Basic_Slideshow;
 class Radio_Block;
-
-struct SlideshowView {
-    subchannel_id_t subchannel_id = 0;
-    std::shared_ptr<Basic_Slideshow> slideshow = nullptr;
-};
 
 class Radio_View_Controller 
 {
 public:
-    std::optional<SlideshowView> selected_slideshow = std::nullopt;
     float constellation_scale = 1.0f;
     float average_constellation_magnitude = 1.0f;
     ImGui::ConstellationDiagram constellation_diagram;
