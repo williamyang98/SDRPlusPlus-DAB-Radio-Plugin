@@ -4,11 +4,6 @@
 
 #include "./dab_module.h"
 
-#include <easylogging++.h>
-#include "dab/logging.h"
-
-INITIALIZE_EASYLOGGINGPP 
-
 SDRPP_MOD_INFO{
     /* Name:            */ "dab_decoder",
     /* Description:     */ "DAB Radio Decoder",
@@ -18,26 +13,6 @@ SDRPP_MOD_INFO{
 };
 
 MOD_EXPORT void _INIT_() {
-    // setup logging for DAB radio module
-    bool is_logging = false;
-    auto dab_loggers = RegisterLogging();
-    auto basic_radio_logger = el::Loggers::getLogger("basic-radio");
-    auto basic_scraper_logger = el::Loggers::getLogger("basic-scraper");
-
-    el::Configurations defaultConf;
-    const char* logging_level = is_logging ? "true" : "false";
-    defaultConf.setToDefault();
-    defaultConf.setGlobally(el::ConfigurationType::Enabled, logging_level);
-    defaultConf.setGlobally(el::ConfigurationType::Format, "[%level] [%thread] [%logger] %msg");
-    el::Loggers::reconfigureAllLoggers(defaultConf);
-    el::Helpers::setThreadName("main-thread");
-
-    el::Configurations scraper_conf; 
-    scraper_conf.setToDefault();
-    scraper_conf.setGlobally(el::ConfigurationType::Enabled, "true");
-    scraper_conf.setGlobally(el::ConfigurationType::Format, "[%level] [%thread] [%logger] %msg");
-    basic_scraper_logger->configure(scraper_conf);
-
     json def = json({});
     config.setPath(core::args["root"].s() + "/dab_plugin_config.json");
     config.load(def);
@@ -45,8 +20,7 @@ MOD_EXPORT void _INIT_() {
 }
 
 MOD_EXPORT ModuleManager::Instance* _CREATE_INSTANCE_(std::string name) {
-    auto instance = new DABModule(name);
-    return instance;
+    return new DABModule(name);
 }
 
 MOD_EXPORT void _DELETE_INSTANCE_(void* instance) {

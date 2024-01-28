@@ -22,7 +22,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 # build sdrpp_core
 # sdrpp_core imports libraries using vcpkg or pkgconfig
 # refer to ./toolchains/ubuntu/install_packages.sh or ./vcpkg.json for dependencies
-if(DEFINED MSVC)
+if(MSVC)
     set(USE_INTERNAL_LIBCORRECT OFF CACHE BOOL "Use internal libcorrect")
     # we need to use our version of libcorrect due to ninja breaking on windows
     # this is because static and dynamic versions of the same library have the same name 
@@ -46,11 +46,10 @@ set_target_properties(sdrpp_core PROPERTIES CXX_STANDARD 17)
 set(DAB_RADIO_DIR ${CMAKE_SOURCE_DIR}/vendor/DAB-Radio)
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${DAB_RADIO_DIR}/cmake")
 find_package(faad2 REQUIRED)
-find_package(easyloggingpp REQUIRED)
 find_package(fmt REQUIRED)
 set(viterbi_DIR ${DAB_RADIO_DIR}/vendor/viterbi_decoder)
 find_package(viterbi CONFIG REQUIRED)
-if(DEFINED MSVC)
+if(MSVC)
     # vcpkg
     find_package(FFTW3f CONFIG REQUIRED)
     set(FFTW3_LIBS FFTW3::fftw3f)

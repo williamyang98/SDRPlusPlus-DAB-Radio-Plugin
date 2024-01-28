@@ -22,7 +22,5 @@ set_target_properties(dab_plugin PROPERTIES CXX_STANDARD 17)
 target_include_directories(dab_plugin PRIVATE ${SRC_DIR} ${ROOT_DIR} ${AUDIO_DIR})
 target_link_libraries(dab_plugin PRIVATE 
     sdrpp_core 
-    ofdm_core dab_core basic_radio 
-    audio_mixer
-    easyloggingpp fmt)
-target_compile_definitions(dab_plugin PRIVATE ELPP_THREAD_SAFE)
+    ofdm_core dab_core basic_radio audio_mixer
+    fmt)
