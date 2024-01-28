@@ -21,7 +21,7 @@ Install vcpkg and integrate install. Refer to instructions [here](https://github
 If the vcpkg toolchain file is in a different location modify the ```cmake_configure.sh``` file.
 
 1. Run ```./toolchains/windows/cmake_configure.sh``` to configure cmake.
-2. Run ```./toolchains/windows/build.sh``` to compile plugin.
+2. Run ```ninja -C build-windows dab_plugin``` to compile plugin.
 3. Run ```./toolchains/windows/create_package.sh``` to place plugin files into folder.
 
 ## Install files

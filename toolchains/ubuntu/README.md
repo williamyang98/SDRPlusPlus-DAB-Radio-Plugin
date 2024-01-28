@@ -5,7 +5,7 @@ Clone the repository recursively so all the submodules are installed.
 ## Steps
 1. ```./toolchains/ubuntu/install_packages.sh```.
 2. ```./toolchains/ubuntu/cmake_configure.sh```.
-3. ```./toolchains/ubuntu/build.sh```.
+3. ```ninja -C build-ubuntu dab_plugin```.
 4. ```./toolchains/ubuntu/create_package.sh```.
 
 ## Install files
