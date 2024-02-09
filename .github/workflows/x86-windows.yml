@@ -52,7 +52,7 @@ jobs:
       run: cmake -B ${{github.workspace}}/build-windows -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_TOOLCHAIN_FILE:STRING=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -G "Ninja"
 
     - name: Build
-      run: ninja -C ${{github.workspace}}/build-windows dab_plugin
+      run: cmake --build ${{github.workspace}}/build-windows --config ${{env.BUILD_TYPE}} --target dab_plugin
 
     - name: Create package
       shell: sh
