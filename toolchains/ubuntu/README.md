@@ -1,6 +1,6 @@
 # Instructions
 Clone the repository recursively so all the submodules are installed.
-```git clone https://github.com/FiendChain/SDRPlusPlus-DAB-Radio-Plugin```
+```git clone https://github.com/williamyang98/SDRPlusPlus-DAB-Radio-Plugin```
 
 ## Steps
 1. ```./toolchains/ubuntu/install_packages.sh```.

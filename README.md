@@ -1,15 +1,15 @@
 ## Introduction
-[![x86-windows](https://github.com/FiendChain/SDRPlusPlus-DAB-Radio-Plugin/actions/workflows/x86-windows.yml/badge.svg)](https://github.com/FiendChain/SDRPlusPlus-DAB-Radio-Plugin/actions/workflows/x86-windows.yml)
-[![x86-ubuntu](https://github.com/FiendChain/SDRPlusPlus-DAB-Radio-Plugin/actions/workflows/x86-ubuntu.yml/badge.svg)](https://github.com/FiendChain/SDRPlusPlus-DAB-Radio-Plugin/actions/workflows/x86-ubuntu.yml)
-[![macos](https://github.com/FiendChain/SDRPlusPlus-DAB-Radio-Plugin/actions/workflows/macos.yml/badge.svg)](https://github.com/FiendChain/SDRPlusPlus-DAB-Radio-Plugin/actions/workflows/macos.yml)
+[![x86-windows](https://github.com/williamyang98/SDRPlusPlus-DAB-Radio-Plugin/actions/workflows/x86-windows.yml/badge.svg)](https://github.com/williamyang98/SDRPlusPlus-DAB-Radio-Plugin/actions/workflows/x86-windows.yml)
+[![x86-ubuntu](https://github.com/williamyang98/SDRPlusPlus-DAB-Radio-Plugin/actions/workflows/x86-ubuntu.yml/badge.svg)](https://github.com/williamyang98/SDRPlusPlus-DAB-Radio-Plugin/actions/workflows/x86-ubuntu.yml)
+[![macos](https://github.com/williamyang98/SDRPlusPlus-DAB-Radio-Plugin/actions/workflows/macos.yml/badge.svg)](https://github.com/williamyang98/SDRPlusPlus-DAB-Radio-Plugin/actions/workflows/macos.yml)
 
 SDR++ DAB radio plugin. 
 
 Before installing this plugin, make sure that your version of SDR++ is the same as the one in ```vendor/sdrplusplus```. If it isn't refer to the build instructions to compile for your version of SDR++.
 
-https://github.com/FiendChain/SDRPlusPlus-DAB-Radio-Plugin/assets/21079869/4625d888-87d6-43cf-8426-b0a7e5cffaf4
+https://github.com/williamyang98/SDRPlusPlus-DAB-Radio-Plugin/assets/21079869/4625d888-87d6-43cf-8426-b0a7e5cffaf4
 
-Core algorithms for DAB radio are used from https://github.com/FiendChain/DAB-Radio.
+Core algorithms for DAB radio are used from https://github.com/williamyang98/DAB-Radio.
 
 SDR++ is at https://github.com/AlexandreRouma/SDRPlusPlus/tree/master/core.
 
@@ -42,6 +42,6 @@ Build using the instructions at ```./toolchains/ubuntu/README.md```.
 Refer to ```./toolchains/*/README.md``` for build instructions.
 
 ## TODO
-- Improve the user interface so that you can view as much information as the original GUI found [here](https://github.com/FiendChain/DAB-Radio).
+- Improve the user interface so that you can view as much information as the original GUI found [here](https://github.com/williamyang98/DAB-Radio).
 - Improve integration with SDR++.
 - Determine how to make this build crossplatform with all the necessary dependencies.

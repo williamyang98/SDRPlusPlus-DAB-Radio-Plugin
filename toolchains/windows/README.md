@@ -1,7 +1,7 @@
 # Instructions
 Clone the repository recursively so all the submodules are installed.
 
-```git clone https://github.com/FiendChain/SDRPlusPlus-DAB-Radio-Plugin --recurse-submodules```
+```git clone https://github.com/williamyang98/SDRPlusPlus-DAB-Radio-Plugin --recurse-submodules```
 
 ## Prerequistes
 ### Volk
@@ -17,12 +17,12 @@ Install vcpkg and integrate install. Refer to instructions [here](https://github
 
 ### Modify CMakeLists.txt and vcpkg.json for SSE2, AVX or AVX2 
 We are using the MSVC C++ compiler since SDR++ doesn't compile with clang on windows. This requires changing the ```/arch:XXX``` option to use the correct architecture.
-Modify [CMakeLists.txt](https://github.com/FiendChain/SDRPlusPlus-DAB-Radio-Plugin/blob/6a4ce5587dd53fcf1ff4d1122c3f74d97798508a/CMakeLists.txt#L76-L77) which is located at the root of the project.
+Modify [CMakeLists.txt](https://github.com/williamyang98/SDRPlusPlus-DAB-Radio-Plugin/blob/6a4ce5587dd53fcf1ff4d1122c3f74d97798508a/CMakeLists.txt#L76-L77) which is located at the root of the project.
 - ```/arch:AVX2```
 - ```/arch:AVX```
 - Remove the ```/arch:XXX``` flag entirely for SSE2 builds
 
-*(Optional)* FFTW3 is built by default with AVX2 instructions. Modify [vcpkg.json](https://github.com/FiendChain/SDRPlusPlus-DAB-Radio-Plugin/blob/6a4ce5587dd53fcf1ff4d1122c3f74d97798508a/vcpkg.json#L17) so fftw3 uses the correct "features" for your CPU. This might not be necessary since it uses ```cpu_features``` to determine and dispatch calls at runtime.
+*(Optional)* FFTW3 is built by default with AVX2 instructions. Modify [vcpkg.json](https://github.com/williamyang98/SDRPlusPlus-DAB-Radio-Plugin/blob/6a4ce5587dd53fcf1ff4d1122c3f74d97798508a/vcpkg.json#L17) so fftw3 uses the correct "features" for your CPU. This might not be necessary since it uses ```cpu_features``` to determine and dispatch calls at runtime.
 - ```"features": ["avx"]```
 - ```"features": ["sse2"]``` 
 - ```"features": ["sse"]```
