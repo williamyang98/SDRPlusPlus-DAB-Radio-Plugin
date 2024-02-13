@@ -74,6 +74,7 @@ DABModule::DABModule(std::string _name)
     // setup radio
     radio_block = std::make_unique<Radio_Block>(1,1);
     ofdm_demodulator_sink = std::make_unique<OFDM_Demodulator_Sink>(radio_block->get_ofdm_demodulator());
+    ofdm_demodulator_sink->init(nullptr);
     radio_view_controller = std::make_unique<Radio_View_Controller>();
     // setup audio
     const float DEFAULT_AUDIO_SAMPLE_RATE = 48000.0f;
