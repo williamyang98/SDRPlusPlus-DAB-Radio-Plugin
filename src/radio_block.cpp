@@ -3,6 +3,7 @@
 #include "ofdm/dab_mapper_ref.h"
 #include "ofdm/dab_ofdm_params_ref.h"
 #include "ofdm/dab_prs_ref.h"
+#include "basic_radio/basic_audio_channel.h"
 #include "utility/span.h"
 
 constexpr int TRANSMISSION_MODE = 1;
@@ -58,8 +59,8 @@ void Radio_Block::reset_radio() {
     auto audio_pipeline = m_audio_pipeline;
     auto radio = std::make_shared<BasicRadio>(m_dab_params, m_dab_total_threads);
     audio_pipeline->clear_sources();
-    radio->On_DAB_Plus_Channel().Attach(
-        [audio_pipeline](subchannel_id_t subchannel_id, Basic_DAB_Plus_Channel& channel) {
+    radio->On_Audio_Channel().Attach(
+        [audio_pipeline](subchannel_id_t subchannel_id, Basic_Audio_Channel& channel) {
             auto& controls = channel.GetControls();
             auto audio_source = std::make_shared<AudioPipelineSource>();
             audio_pipeline->add_source(audio_source);

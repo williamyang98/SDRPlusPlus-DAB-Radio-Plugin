@@ -1,6 +1,7 @@
 #include "./render_radio_block.h"
 
 #include <cmath>
+#include <string_view>
 #include <fmt/core.h>
 #include <imgui/imgui.h>
 #include <imgui/imgui_internal.h>
@@ -17,10 +18,14 @@
 #include "./texture.h"
 #include "ofdm/ofdm_demodulator.h"
 #include "basic_radio/basic_radio.h"
+#include "basic_radio/basic_audio_channel.h"
+#include "basic_radio/basic_data_packet_channel.h"
 #include "basic_radio/basic_dab_plus_channel.h"
+#include "basic_radio/basic_dab_channel.h"
 #include "basic_radio/basic_slideshow.h"
 #include "dab/database/dab_database.h"
 #include "dab/database/dab_database_updater.h"
+#include "dab/dab_misc_info.h"
 #include "audio/audio_pipeline.h"
 
 template <typename T, typename F>
@@ -152,14 +157,16 @@ void Render_Radio_Block(Radio_Block& block, Radio_View_Controller& ctx) {
                     if (ImGui::Button("Apply Settings")) {
                         auto& db = radio->GetDatabase();
                         for (auto& subchannel: db.subchannels) {
-                            auto* channel = radio->Get_DAB_Plus_Channel(subchannel.id);
-                            auto& controls = channel->GetControls();
-                            if (is_play_audio) {
-                                controls.SetIsPlayAudio(true);
-                            } else {
-                                controls.SetIsDecodeAudio(false);
+                            auto* channel = radio->Get_Audio_Channel(subchannel.id);
+                            if (channel != nullptr) {
+                                auto& controls = channel->GetControls();
+                                if (is_play_audio) {
+                                    controls.SetIsPlayAudio(true);
+                                } else {
+                                    controls.SetIsDecodeAudio(false);
+                                }
+                                controls.SetIsDecodeData(is_decode_data);
                             }
-                            controls.SetIsDecodeData(is_decode_data);
                         }
                     }
                     ImGui::EndTabItem();
@@ -262,7 +269,7 @@ void RenderRadioServices(BasicRadio& radio, Radio_View_Controller& ctx) {
             bool is_decode_data = false;
             for (auto& component: db.service_components) {
                 if (component.service_reference != service->reference) continue;
-                auto* channel = radio.Get_DAB_Plus_Channel(component.subchannel_id);
+                auto* channel = radio.Get_Audio_Channel(component.subchannel_id);
                 if (channel != nullptr) {
                     auto& controls = channel->GetControls();
                     is_play_audio |= controls.GetIsPlayAudio();
@@ -289,6 +296,170 @@ void RenderRadioServices(BasicRadio& radio, Radio_View_Controller& ctx) {
         }
 
         ImGui::EndCombo();
+    }
+}
+
+static void RenderSlideshowManager(Basic_Slideshow_Manager& slideshow_manager, Radio_View_Controller& ctx, subchannel_id_t subchannel_id) {
+    static std::vector<std::shared_ptr<Basic_Slideshow>> slideshows;
+    {
+        auto lock = std::unique_lock(slideshow_manager.GetSlideshowsMutex());
+        slideshows.clear();
+        for (auto& slideshow: slideshow_manager.GetSlideshows()) {
+            slideshows.push_back(slideshow);
+        }
+    }
+
+    const int total_slideshows = int(slideshows.size());
+    if (total_slideshows > 0) {
+        static int slideshow_index = 0;
+        if (total_slideshows > 1) {
+            ImGui::SliderInt("###Image", &slideshow_index, 0, total_slideshows-1, "%d", ImGuiSliderFlags_AlwaysClamp);
+        }
+        ClampValue(slideshow_index, 0, total_slideshows-1);
+
+        auto slideshow = slideshows[slideshow_index];
+        const auto* texture = ctx.TryGetSlideshowTexture(subchannel_id, slideshow->transport_id, slideshow->image_data);
+        if (texture != nullptr) {
+            const ImVec2 region_min = ImGui::GetWindowContentRegionMin();
+            const ImVec2 region_max = ImGui::GetWindowContentRegionMax();
+            const float region_width = float(region_max.x - region_min.x);
+            const float scale = region_width / static_cast<float>(texture->GetWidth());
+            const auto texture_size = ImVec2(
+                    static_cast<float>(texture->GetWidth()) * scale, 
+                    static_cast<float>(texture->GetHeight()) * scale
+                    );
+            const auto texture_id = reinterpret_cast<ImTextureID>(texture->GetTextureID());
+            ImGui::Image(texture_id, texture_size);
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("%.*s", int(slideshow->name.length()), slideshow->name.c_str());
+            }
+        } else {
+            ImGui::Text("Failed to load slideshow image");
+        }
+
+        #define FIELD_MACRO(name, fmt, ...) {\
+            ImGui::PushID(row_id++);\
+            ImGui::TableNextRow();\
+            ImGui::TableSetColumnIndex(0);\
+            ImGui::TextWrapped(name);\
+            ImGui::TableSetColumnIndex(1);\
+            ImGui::TextWrapped(fmt, __VA_ARGS__);\
+            ImGui::PopID();\
+        }\
+
+        ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
+        if (ImGui::BeginTable("Status", 2, flags)) {
+            int row_id  = 0;
+            FIELD_MACRO("Subchannel ID", "%u", subchannel_id);
+            FIELD_MACRO("Transport ID", "%u", slideshow->transport_id);
+            FIELD_MACRO("Name", "%.*s", int(slideshow->name.length()), slideshow->name.c_str());
+            FIELD_MACRO("Trigger Time", "%" PRIi64, int64_t(slideshow->trigger_time));
+            FIELD_MACRO("Expire Time", "%" PRIi64, int64_t(slideshow->expire_time));
+            FIELD_MACRO("Category ID", "%u", slideshow->category_id);
+            FIELD_MACRO("Slide ID", "%u", slideshow->slide_id);
+            FIELD_MACRO("Category title", "%.*s", int(slideshow->category_title.length()), slideshow->category_title.c_str());
+            FIELD_MACRO("Click Through URL", "%.*s", int(slideshow->click_through_url.length()), slideshow->click_through_url.c_str());
+            FIELD_MACRO("Alt Location URL", "%.*s", int(slideshow->alt_location_url.length()), slideshow->alt_location_url.c_str());
+            FIELD_MACRO("Size", "%zu Bytes", slideshow->image_data.size());
+
+            if (texture != NULL) {
+                FIELD_MACRO("Resolution", "%u x %u", texture->GetWidth(), texture->GetHeight());
+                FIELD_MACRO("Internal Texture ID", "%" PRIu32, texture->GetTextureID());
+            }
+            ImGui::EndTable();
+        }
+
+        #undef FIELD_MACRO
+
+    } else {
+        ImGui::Text("No slideshows available yet");
+    }
+}
+
+static void RenderAudioChannelControls(Basic_Audio_Channel& channel) {
+    auto& controls = channel.GetControls();
+    const bool is_play_audio = controls.GetIsPlayAudio();
+    const bool is_decode_data = controls.GetIsDecodeData();
+    const bool is_all_enabled = is_play_audio && is_decode_data;
+    if (is_all_enabled) {
+        if (ImGui::Button("Stop All")) controls.StopAll();
+    } else {
+        if (ImGui::Button("Run All")) controls.RunAll();
+    }
+    ImGui::SameLine();
+    if (is_play_audio) {
+        if (ImGui::Button("Mute Audio")) controls.SetIsDecodeAudio(false);
+    } else {
+        if (ImGui::Button("Play Audio")) controls.SetIsPlayAudio(true);
+    }
+    ImGui::SameLine();
+    if (is_decode_data) {
+        if (ImGui::Button("Stop Data Decode")) controls.SetIsDecodeData(false);
+    } else {
+        if (ImGui::Button("Start Data Decode")) controls.SetIsDecodeData(true);
+    }
+}
+
+static void RenderDABPlusChannelStatus(Basic_DAB_Plus_Channel& channel, Subchannel& subchannel) {
+    std::string codec_description = "DAB+ (no codec info)";
+    const auto prot_label = GetSubchannelProtectionLabel(subchannel);
+    const uint32_t bitrate_kbps = GetSubchannelBitrate(subchannel);
+    const auto& superframe_header = channel.GetSuperFrameHeader();
+    const bool is_codec_found = superframe_header.sampling_rate != 0;
+    if (is_codec_found) {
+        const char* mpeg_surround = GetMPEGSurroundString(superframe_header.mpeg_surround);
+        codec_description = fmt::format("DAB+ {}Hz {} {} {}", 
+            superframe_header.sampling_rate, 
+            superframe_header.is_stereo ? "Stereo" : "Mono",  
+            GetAACDescriptionString(superframe_header.SBR_flag, superframe_header.PS_flag),
+            mpeg_surround ? mpeg_surround : ""
+        );
+    }
+    const auto& dynamic_label = channel.GetDynamicLabel();
+    ImGui::TextWrapped("%.*s", int(codec_description.length()), codec_description.c_str());
+    ImGui::TextWrapped("%.*s", int(dynamic_label.length()), dynamic_label.data());
+
+    ImGui::Separator();
+
+    ImGui::RadioButton("Firecode", !channel.IsFirecodeError());
+    ImGui::SameLine();
+    ImGui::RadioButton("Reed Solomon", !channel.IsRSError());
+    ImGui::SameLine();
+    ImGui::RadioButton("Access Unit", !channel.IsAUError());
+    ImGui::SameLine();
+    ImGui::RadioButton("Codec", !channel.IsCodecError());
+}
+
+static void RenderDABChannelStatus(Basic_DAB_Channel& channel, Subchannel& subchannel) {
+    std::string codec_description = "DAB (no codec info)";
+    const auto prot_label = GetSubchannelProtectionLabel(subchannel);
+    const uint32_t bitrate_kbps = GetSubchannelBitrate(subchannel);
+    const auto& audio_params_opt = channel.GetAudioParams();
+    if (audio_params_opt.has_value()) {
+        const auto& audio_params = audio_params_opt.value();
+        codec_description = fmt::format("DAB MP2 {}Hz {} {}kb/s", 
+            audio_params.sample_rate, 
+            audio_params.is_stereo ? "Stereo" : "Mono",  
+            audio_params.bitrate_kbps
+        );
+    }
+    const auto& dynamic_label = channel.GetDynamicLabel();
+    ImGui::TextWrapped("%.*s", int(codec_description.length()), codec_description.c_str());
+    ImGui::TextWrapped("%.*s", int(dynamic_label.length()), dynamic_label.data());
+
+    ImGui::Separator();
+
+    ImGui::RadioButton("MP2 Decoder", !channel.GetIsError());
+}
+
+static void RenderAudioChannelStatus(Basic_Audio_Channel& channel, Subchannel& subchannel) {
+    const auto type = channel.GetType();
+    if (type == AudioServiceType::DAB_PLUS) {
+        auto& dab_plus_channel = dynamic_cast<Basic_DAB_Plus_Channel&>(channel);
+        RenderDABPlusChannelStatus(dab_plus_channel, subchannel);
+    } else if (type == AudioServiceType::DAB) {
+        auto& dab_channel = dynamic_cast<Basic_DAB_Channel&>(channel);
+        RenderDABChannelStatus(dab_channel, subchannel);
     }
 }
 
@@ -332,72 +503,17 @@ void RenderRadioService(BasicRadio& radio, Radio_View_Controller& ctx) {
         return;
     }
 
-    auto* channel = radio.Get_DAB_Plus_Channel(subchannel->id);
-    if (channel == nullptr) {
-        ImGui::Text("Not a DAB+ channel");
-        return;
-    }
-
-    auto& controls = channel->GetControls();
-    const bool is_play_audio = controls.GetIsPlayAudio();
-    const bool is_decode_data = controls.GetIsDecodeData();
-    const bool is_all_enabled = is_play_audio && is_decode_data;
-    if (is_all_enabled) {
-        if (ImGui::Button("Stop All")) controls.StopAll();
-    } else {
-        if (ImGui::Button("Run All")) controls.RunAll();
-    }
-    ImGui::SameLine();
-    if (is_play_audio) {
-        if (ImGui::Button("Mute Audio")) controls.SetIsDecodeAudio(false);
-    } else {
-        if (ImGui::Button("Play Audio")) controls.SetIsPlayAudio(true);
-    }
-    ImGui::SameLine();
-    if (is_decode_data) {
-        if (ImGui::Button("Stop Data Decode")) controls.SetIsDecodeData(false);
-    } else {
-        if (ImGui::Button("Start Data Decode")) controls.SetIsDecodeData(true);
+    auto* audio_channel = radio.Get_Audio_Channel(subchannel->id);
+    auto* data_packet_channel = radio.Get_Data_Packet_Channel(subchannel->id);
+    if (audio_channel != nullptr) {
+        RenderAudioChannelControls(*audio_channel);
+        ImGui::Separator();
+        RenderAudioChannelStatus(*audio_channel, *subchannel);
+    } else if (data_packet_channel != nullptr) {
+        ImGui::Text("Data Packet Channel");
     }
     ImGui::Separator();
 
-    auto get_codec_description = [&]() -> std::string {
-        const auto prot_label = GetSubchannelProtectionLabel(*subchannel);
-        const uint32_t bitrate_kbps = GetSubchannelBitrate(*subchannel);
-        const auto& superframe_header = channel->GetSuperFrameHeader();
-        const bool is_codec_found = superframe_header.sampling_rate != 0;
-        if (is_codec_found) {
-            const char* mpeg_surround = GetMPEGSurroundString(superframe_header.mpeg_surround);
-            return fmt::format("DAB+ {}Hz {} {} {}", 
-                superframe_header.sampling_rate, 
-                superframe_header.is_stereo ? "Stereo" : "Mono",  
-                GetAACDescriptionString(superframe_header.SBR_flag, superframe_header.PS_flag),
-                mpeg_surround ? mpeg_surround : ""
-            );
-        } else {
-            return std::string("DAB+ (no codec info)");
-        }
-    };
-
-    auto codec_description = get_codec_description();
-    const auto& dynamic_label = channel->GetDynamicLabel();
-    ImGui::TextWrapped("%.*s", int(codec_description.length()), codec_description.c_str());
-    ImGui::TextWrapped("%.*s", int(dynamic_label.length()), dynamic_label.c_str());
-
-    ImGui::Separator();
-
-    {
-        ImGui::RadioButton("Firecode", !channel->IsFirecodeError());
-        ImGui::SameLine();
-        ImGui::RadioButton("Reed Solomon", !channel->IsRSError());
-        ImGui::SameLine();
-        ImGui::RadioButton("Access Unit", !channel->IsAUError());
-        ImGui::SameLine();
-        ImGui::RadioButton("Codec", !channel->IsCodecError());
-    }
-
-    ImGui::Separator();
-    
     // Helper macro to layout table rows
     #define FIELD_MACRO(name, fmt, ...) {\
         ImGui::PushID(row_id++);\
@@ -432,68 +548,10 @@ void RenderRadioService(BasicRadio& radio, Radio_View_Controller& ctx) {
 
     if (ImGui::BeginTabBar("channel_tabs")) {
         if (ImGui::BeginTabItem("Slideshow")) {
-            auto& slideshow_manager = channel->GetSlideshowManager();
-            static std::vector<std::shared_ptr<Basic_Slideshow>> slideshows;
-            {
-                auto lock = std::unique_lock(slideshow_manager.GetSlideshowsMutex());
-                slideshows.clear();
-                for (auto& slideshow: slideshow_manager.GetSlideshows()) {
-                    slideshows.push_back(slideshow);
-                }
-            }
-
-            const int total_slideshows = int(slideshows.size());
-            if (total_slideshows > 0) {
-                static int slideshow_index = 0;
-                if (total_slideshows > 1) {
-                    ImGui::SliderInt("###Image", &slideshow_index, 0, total_slideshows-1, "%d", ImGuiSliderFlags_AlwaysClamp);
-                }
-                ClampValue(slideshow_index, 0, total_slideshows-1);
-
-                auto slideshow = slideshows[slideshow_index];
-                const auto* texture = ctx.TryGetSlideshowTexture(subchannel->id, slideshow->transport_id, slideshow->image_data);
-                if (texture != nullptr) {
-                    const ImVec2 region_min = ImGui::GetWindowContentRegionMin();
-                    const ImVec2 region_max = ImGui::GetWindowContentRegionMax();
-                    const float region_width = float(region_max.x - region_min.x);
-                    const float scale = region_width / static_cast<float>(texture->GetWidth());
-                    const auto texture_size = ImVec2(
-                            static_cast<float>(texture->GetWidth()) * scale, 
-                            static_cast<float>(texture->GetHeight()) * scale
-                            );
-                    const auto texture_id = reinterpret_cast<ImTextureID>(texture->GetTextureID());
-                    ImGui::Image(texture_id, texture_size);
-                    if (ImGui::IsItemHovered()) {
-                        ImGui::SetTooltip("%.*s", int(slideshow->name.length()), slideshow->name.c_str());
-                    }
-                } else {
-                    ImGui::Text("Failed to load slideshow image");
-                }
-
-                ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
-                if (ImGui::BeginTable("Status", 2, flags)) {
-                    int row_id  = 0;
-                    FIELD_MACRO("Subchannel ID", "%u", subchannel->id);
-                    FIELD_MACRO("Transport ID", "%u", slideshow->transport_id);
-                    FIELD_MACRO("Name", "%.*s", int(slideshow->name.length()), slideshow->name.c_str());
-                    FIELD_MACRO("Trigger Time", "%" PRIi64, int64_t(slideshow->trigger_time));
-                    FIELD_MACRO("Expire Time", "%" PRIi64, int64_t(slideshow->expire_time));
-                    FIELD_MACRO("Category ID", "%u", slideshow->category_id);
-                    FIELD_MACRO("Slide ID", "%u", slideshow->slide_id);
-                    FIELD_MACRO("Category title", "%.*s", int(slideshow->category_title.length()), slideshow->category_title.c_str());
-                    FIELD_MACRO("Click Through URL", "%.*s", int(slideshow->click_through_url.length()), slideshow->click_through_url.c_str());
-                    FIELD_MACRO("Alt Location URL", "%.*s", int(slideshow->alt_location_url.length()), slideshow->alt_location_url.c_str());
-                    FIELD_MACRO("Size", "%zu Bytes", slideshow->image_data.size());
-
-                    if (texture != NULL) {
-                        FIELD_MACRO("Resolution", "%u x %u", texture->GetWidth(), texture->GetHeight());
-                        FIELD_MACRO("Internal Texture ID", "%" PRIu32, texture->GetTextureID());
-                    }
-                    ImGui::EndTable();
-                }
-
-            } else {
-                ImGui::Text("No slideshows available yet");
+            if (audio_channel != nullptr) {
+                RenderSlideshowManager(audio_channel->GetSlideshowManager(), ctx, subchannel->id);
+            } else if (data_packet_channel != nullptr) {
+                RenderSlideshowManager(data_packet_channel->GetSlideshowManager(), ctx, subchannel->id);
             }
             ImGui::EndTabItem();
         }
