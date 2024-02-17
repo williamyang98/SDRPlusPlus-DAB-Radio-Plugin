@@ -1,7 +1,7 @@
 ## Introduction
 [![x86-windows](https://github.com/williamyang98/SDRPlusPlus-DAB-Radio-Plugin/actions/workflows/x86-windows.yml/badge.svg)](https://github.com/williamyang98/SDRPlusPlus-DAB-Radio-Plugin/actions/workflows/x86-windows.yml)
 [![x86-ubuntu](https://github.com/williamyang98/SDRPlusPlus-DAB-Radio-Plugin/actions/workflows/x86-ubuntu.yml/badge.svg)](https://github.com/williamyang98/SDRPlusPlus-DAB-Radio-Plugin/actions/workflows/x86-ubuntu.yml)
-[![macos](https://github.com/williamyang98/SDRPlusPlus-DAB-Radio-Plugin/actions/workflows/macos.yml/badge.svg)](https://github.com/williamyang98/SDRPlusPlus-DAB-Radio-Plugin/actions/workflows/macos.yml)
+[![x86-macos](https://github.com/williamyang98/SDRPlusPlus-DAB-Radio-Plugin/actions/workflows/x86-macos.yml/badge.svg)](https://github.com/williamyang98/SDRPlusPlus-DAB-Radio-Plugin/actions/workflows/x86-macos.yml)
 
 SDR++ DAB radio plugin. 
 
@@ -35,11 +35,8 @@ Download from releases page or build using the instructions below. Make sure you
 7. If no sound is present, check the ```Sinks``` tab and make sure that ```DAB Radio``` is set to ```Audio``` and to the correct audio device.
 8. You may also copy ```fftw3f.dll``` into the main SDR++ folder since it is compiled with AVX2 which may improve performance. Be sure to backup the original file before replacing it.
 
-### Ubuntu
-Build using the instructions at ```./toolchains/ubuntu/README.md```.
-
 ## Build instructions
-Refer to ```./toolchains/*/README.md``` for build instructions.
+Refer to ```toolchains/*/README.md``` for build instructions. The github workflows in ```.github/workflows``` can also be used as a reference for a working build setup.
 
 ## TODO
 - Improve the user interface so that you can view as much information as the original GUI found [here](https://github.com/williamyang98/DAB-Radio).

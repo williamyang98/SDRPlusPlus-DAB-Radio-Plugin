@@ -7,6 +7,8 @@ on:
 
 env:
   BUILD_TYPE: Release
+  BUILD_DIR: build
+  PACKAGE_DIR: build-out
 
 jobs:
   skip_check:
@@ -21,7 +23,7 @@ jobs:
         concurrent_skipping: 'same_content'
         cancel_others: 'true'
         skip_after_successful_duplicate: 'true'
-        paths_ignore: '["**/README.md", "**/docs/**", "**/LICENSE.txt", "vcpkg.json", "toolchains/windows/*"]'
+        paths_ignore: '["**/README.md", "**/docs/**", "**/LICENSE.txt", "vcpkg.json", "toolchains/windows/*", "toolchains/macos/*"]'
         do_not_skip: '["workflow_dispatch", "schedule"]'
 
   build:
@@ -34,25 +36,27 @@ jobs:
     - uses: actions/checkout@v3
       with: 
         submodules: recursive 
-      
+
     - name: Install packages
-      shell: bash
-      run: ./toolchains/ubuntu/install_packages.sh
-    
+      run: |
+        sudo apt-get update 
+        ./toolchains/ubuntu/install_packages.sh
+
     - name: Configure CMake
-      shell: bash
-      run: cmake -B ${{github.workspace}}/build-ubuntu -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -G Ninja -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/toolchains/ubuntu/linux-gnu-toolchain.cmake
+      run: cmake . -B ${{github.workspace}}/${{env.BUILD_DIR}} -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -G Ninja
 
     - name: Build
-      run: ninja -C ${{github.workspace}}/build-ubuntu dab_plugin
+      run: cmake --build ${{github.workspace}}/${{env.BUILD_DIR}} --target dab_plugin
 
     - name: Create package
-      shell: sh
-      run: ./toolchains/ubuntu/create_package.sh
+      run: |
+        mkdir -p ${{env.PACKAGE_DIR}} 
+        cp ${{env.BUILD_DIR}}/src/*.so ${{env.PACKAGE_DIR}}/
+        cp README.md ${{env.PACKAGE_DIR}}/
 
     - name: Upload files (Release)
       uses: actions/upload-artifact@v3
       with:
         name: sdrpp_dab_radio_plugin_ubuntu
-        path: ${{github.workspace}}/plugin_package
+        path: ${{github.workspace}}/${{env.PACKAGE_DIR}}
     

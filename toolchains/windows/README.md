@@ -1,7 +1,7 @@
 # Instructions
 Clone the repository recursively so all the submodules are installed.
 
-```git clone https://github.com/williamyang98/SDRPlusPlus-DAB-Radio-Plugin --recurse-submodules```
+```git clone https://github.com/williamyang98/SDRPlusPlus-DAB-Radio-Plugin.git --recurse-submodules```
 
 ## Prerequistes
 ### Volk

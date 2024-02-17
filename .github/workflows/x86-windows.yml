@@ -7,6 +7,8 @@ on:
 
 env:
   BUILD_TYPE: Release
+  BUILD_DIR: build
+  PACKAGE_DIR: build-out
 
 jobs:
   skip_check:
@@ -21,7 +23,7 @@ jobs:
         concurrent_skipping: 'same_content'
         cancel_others: 'true'
         skip_after_successful_duplicate: 'true'
-        paths_ignore: '["**/README.md", "**/docs/**", "**/LICENSE.txt", "toolchains/ubuntu/*"]'
+        paths_ignore: '["**/README.md", "**/docs/**", "**/LICENSE.txt", "toolchains/ubuntu/*", "toolchains/macos/*"]'
         do_not_skip: '["workflow_dispatch", "schedule"]'
 
   build:
@@ -49,17 +51,20 @@ jobs:
       run: python -m pip install mako
 
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build-windows -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_TOOLCHAIN_FILE:STRING=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -G "Ninja"
+      run: cmake -B ${{github.workspace}}/${{env.BUILD_DIR}} -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_TOOLCHAIN_FILE:STRING=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake -G Ninja
 
     - name: Build
-      run: cmake --build ${{github.workspace}}/build-windows --config ${{env.BUILD_TYPE}} --target dab_plugin
+      run: cmake --build ${{github.workspace}}/${{env.BUILD_DIR}} --config ${{env.BUILD_TYPE}} --target dab_plugin
 
     - name: Create package
-      shell: sh
-      run: ./toolchains/windows/create_package.sh
+      shell: bash
+      run: |
+        mkdir -p ${{env.PACKAGE_DIR}} 
+        cp ${{env.BUILD_DIR}}/src/*.dll ${{env.PACKAGE_DIR}}/
+        cp README.md ${{env.PACKAGE_DIR}}/
 
     - name: Upload files (Release)
       uses: actions/upload-artifact@v3
       with:
         name: sdrpp_dab_radio_plugin_windows
-        path: ${{github.workspace}}/plugin_package
+        path: ${{github.workspace}}/${{env.PACKAGE_DIR}}
