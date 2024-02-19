@@ -31,6 +31,9 @@ jobs:
     if: needs.skip_check.outputs.should_skip != 'true'
 
     runs-on: windows-2022
+    strategy:
+      matrix:
+        architecture: ["sse2", "avx2" ]
 
     steps:
     - uses: actions/checkout@v3
@@ -51,7 +54,7 @@ jobs:
       run: python -m pip install mako
 
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/${{env.BUILD_DIR}} -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_TOOLCHAIN_FILE:STRING=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake -G Ninja
+      run: cmake -B ${{github.workspace}}/${{env.BUILD_DIR}} --preset windows-msvc-${{matrix.architecture}} -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_TOOLCHAIN_FILE:STRING=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake
 
     - name: Build
       run: cmake --build ${{github.workspace}}/${{env.BUILD_DIR}} --config ${{env.BUILD_TYPE}} --target dab_plugin
@@ -66,5 +69,5 @@ jobs:
     - name: Upload files (Release)
       uses: actions/upload-artifact@v3
       with:
-        name: sdrpp_dab_radio_plugin_windows
+        name: sdrpp_dab_radio_plugin_windows_${{matrix.architecture}}
         path: ${{github.workspace}}/${{env.PACKAGE_DIR}}

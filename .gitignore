@@ -6,3 +6,4 @@ build-*/
 plugin_package/
 plugin_package.zip
 venv/
+CMakeUserPresets.json

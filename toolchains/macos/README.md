@@ -10,7 +10,7 @@ Clone the repository recursively so all the submodules are installed.
     - Change to volk: ```cd vendor/volk```
     - Configure cmake: ```cmake . -B build -DCMAKE_BUILD_TYPE=Release -G Ninja```
     - Build and install: ```sudo cmake --build build --config Release --target install```
-5. Configure cmake: ```cmake . -B build -DCMAKE_BUILD_TYPE=Release -G Ninja```
+5. Configure cmake: ```cmake . -B build --preset clang -DCMAKE_BUILD_TYPE=Release```
 6. Build: ```cmake --build build --config Release --target dab_plugin```
 
 ## Install files

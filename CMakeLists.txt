@@ -68,25 +68,3 @@ add_subdirectory(${DAB_RADIO_DIR}/src/basic_radio)
 # build dab plugin
 find_package(audio_mixer REQUIRED)
 add_subdirectory(${CMAKE_SOURCE_DIR}/src)
-
-# simd and math compile options
-function(set_simd_options target)
-    if(NOT ${CMAKE_SYSTEM_PROCESSOR} STREQUAL "aarch64")
-        if(DEFINED MSVC)
-            # NOTE: If your CPU doesn't support these instructions, modify /arch:?
-            target_compile_options(${target} PRIVATE /fp:fast /arch:AVX2)
-        else()
-            # NOTE: We are optimising specifically for your CPU's microarchitecture
-            #       This is okay since we don't ship prebuilt binaries for linux distributions
-            target_compile_options(${target} PRIVATE -march=native -ffast-math)
-        endif()
-    else()
-        target_compile_options(${target} PRIVATE -ffast-math)
-    endif()
-endfunction()
-set_simd_options(ofdm_core)
-set_simd_options(dab_core)
-set_simd_options(basic_radio)
-set_simd_options(audio_mixer)
-set_simd_options(dab_plugin)
-

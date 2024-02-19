@@ -35,6 +35,8 @@ Download from releases page or build using the instructions below. Make sure you
 7. If no sound is present, check the ```Sinks``` tab and make sure that ```DAB Radio``` is set to ```Audio``` and to the correct audio device.
 8. You may also copy ```fftw3f.dll``` into the main SDR++ folder since it is compiled with AVX2 which may improve performance. Be sure to backup the original file before replacing it.
 
+Refer to the build instructions if your processor doesn't support AVX2 instructions to compile with SSE2 or AVX instructions.
+
 ## Build instructions
 Refer to ```toolchains/*/README.md``` for build instructions. The github workflows in ```.github/workflows``` can also be used as a reference for a working build setup.
 
