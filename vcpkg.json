@@ -4,6 +4,10 @@
   "builtin-baseline": "c9140a3b500812ad3206317885860d9553b93f13",
   "dependencies": [
     {
+      "name": "glew",
+      "version>=": "2.2.0#3"
+    }, 
+    {
       "name": "glfw3",
       "version>=": "3.3.6"
     },

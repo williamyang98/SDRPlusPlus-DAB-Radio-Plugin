@@ -1,5 +1,6 @@
 brew 'pkg-config'
 brew 'fftw'
+brew 'glew'
 brew 'glfw'
 brew 'zstd'
 brew 'cmake'
