@@ -39,9 +39,7 @@ else()
     # however pkg-config cant find libcorrect because it is not a package in the repository
 endif()
 set(OPT_BACKEND_GLFW ON CACHE BOOL "Enable glfw backend")
-add_subdirectory(${CMAKE_SOURCE_DIR}/vendor/sdrplusplus/core)
-set_target_properties(sdrpp_core PROPERTIES CXX_STANDARD 17)
-
+find_package(sdrpp_core REQUIRED)
 
 # build dab modules
 # copied from ./vendor/DAB-Radio/CMakeLists.txt 
