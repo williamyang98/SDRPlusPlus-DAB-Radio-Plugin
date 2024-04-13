@@ -1,0 +1,72 @@
+name: x86-macos
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "master", "dev" ]
+
+env:
+  BUILD_TYPE: Release
+  BUILD_DIR: build
+  PACKAGE_DIR: build-out
+  OSX_TARGET: "12.0"
+
+jobs:
+  skip_check:
+    continue-on-error: false
+    runs-on: ubuntu-22.04
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+    steps:
+    - id: skip_check
+      uses: fkirc/skip-duplicate-actions@v5
+      with:
+        concurrent_skipping: 'same_content'
+        cancel_others: 'true'
+        skip_after_successful_duplicate: 'true'
+        paths_ignore: '["**/README.md", "**/docs/**", "**/LICENSE.txt", "vcpkg.json", "toolchains/windows/*", "toolchains/ubuntu/*"]'
+        do_not_skip: '["workflow_dispatch", "schedule"]'
+
+  build:
+    needs: skip_check
+    if: needs.skip_check.outputs.should_skip != 'true'
+
+    runs-on: macos-14 
+
+    steps:
+    - uses: actions/checkout@v3
+      with: 
+        submodules: recursive 
+
+    - name: Update brew
+      run: brew update
+
+    - name: Install dependencies 
+      run: brew bundle install --file=./toolchains/macos/Brewfile
+
+    - name: Install python mako
+      run: pip3 install mako --break-system-packages
+
+    - name: Install volk from vendor/volk
+      run: |
+        cd vendor/volk 
+        cmake . -B build -DCMAKE_OSX_DEPLOYMENT_TARGET=${{env.OSX_TARGET}} -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -G Ninja
+        sudo cmake --build build --config ${{env.BUILD_TYPE}} --target install 
+
+    - name: Configure CMake
+      run: cmake . -B ${{github.workspace}}/${{env.BUILD_DIR}} --preset clang -DCMAKE_OSX_DEPLOYMENT_TARGET=${{env.OSX_TARGET}} -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+    - name: Build
+      run: cmake --build ${{github.workspace}}/${{env.BUILD_DIR}} --config ${{env.BUILD_TYPE}} --target dab_plugin
+
+    - name: Create package
+      run: |
+        mkdir -p ${{env.PACKAGE_DIR}} 
+        cp ${{env.BUILD_DIR}}/src/*.dylib ${{env.PACKAGE_DIR}}/
+        cp README.md ${{env.PACKAGE_DIR}}/
+
+    - name: Upload files (Release)
+      uses: actions/upload-artifact@v3
+      with:
+        name: sdrpp_dab_radio_plugin_macos_arm
+        path: ${{github.workspace}}/${{env.PACKAGE_DIR}}
