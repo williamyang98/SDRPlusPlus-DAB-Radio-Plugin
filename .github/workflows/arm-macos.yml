@@ -1,4 +1,4 @@
-name: x86-macos
+name: arm-macos
 
 on:
   workflow_dispatch:
@@ -47,11 +47,8 @@ jobs:
     - name: Install python mako
       run: pip3 install mako --break-system-packages
 
-    - name: Install volk from vendor/volk
-      run: |
-        cd vendor/volk 
-        cmake . -B build -DCMAKE_OSX_DEPLOYMENT_TARGET=${{env.OSX_TARGET}} -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -G Ninja
-        sudo cmake --build build --config ${{env.BUILD_TYPE}} --target install 
+    - name: Install volk
+      run: git clone --recursive https://github.com/gnuradio/volk && cd volk && mkdir build && cd build && cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 -DCMAKE_BUILD_TYPE=Release .. && make -j3 && sudo make install && cd ../../
 
     - name: Configure CMake
       run: cmake . -B ${{github.workspace}}/${{env.BUILD_DIR}} --preset clang -DCMAKE_OSX_DEPLOYMENT_TARGET=${{env.OSX_TARGET}} -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
