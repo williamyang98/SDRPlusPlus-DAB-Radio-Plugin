@@ -2,6 +2,7 @@
 [![x86-windows](https://github.com/williamyang98/SDRPlusPlus-DAB-Radio-Plugin/actions/workflows/x86-windows.yml/badge.svg)](https://github.com/williamyang98/SDRPlusPlus-DAB-Radio-Plugin/actions/workflows/x86-windows.yml)
 [![x86-ubuntu](https://github.com/williamyang98/SDRPlusPlus-DAB-Radio-Plugin/actions/workflows/x86-ubuntu.yml/badge.svg)](https://github.com/williamyang98/SDRPlusPlus-DAB-Radio-Plugin/actions/workflows/x86-ubuntu.yml)
 [![x86-macos](https://github.com/williamyang98/SDRPlusPlus-DAB-Radio-Plugin/actions/workflows/x86-macos.yml/badge.svg)](https://github.com/williamyang98/SDRPlusPlus-DAB-Radio-Plugin/actions/workflows/x86-macos.yml)
+[![arm-macos](https://github.com/williamyang98/SDRPlusPlus-DAB-Radio-Plugin/actions/workflows/arm-macos.yml/badge.svg)](https://github.com/williamyang98/SDRPlusPlus-DAB-Radio-Plugin/actions/workflows/arm-macos.yml)
 
 SDR++ DAB radio plugin. 
 
