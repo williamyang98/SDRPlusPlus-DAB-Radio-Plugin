@@ -8,7 +8,7 @@ Clone the repository recursively so all the submodules are installed.
 3. Build: ```cmake --build build --config Release```.
 
 ## Install files
-Copy ```build/src/dab_plugin.so``` into ```/usr/lib/sdrpp/plugins/```.
+Copy ```build/src/libdab_plugin.so``` into ```/usr/lib/sdrpp/plugins/```.
 
 Make sure that the version of SDR++ in ```vendor/sdrplusplus``` is the same as your SDR++ installation. 
 
