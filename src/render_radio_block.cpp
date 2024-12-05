@@ -406,13 +406,13 @@ static void RenderDABPlusChannelStatus(Basic_DAB_Plus_Channel& channel, Subchann
     const uint32_t bitrate_kbps = GetSubchannelBitrate(subchannel);
     const auto& superframe_header = channel.GetSuperFrameHeader();
     const bool is_codec_found = superframe_header.sampling_rate != 0;
+    const bool is_stereo = superframe_header.is_stereo || superframe_header.is_parametric_stereo;
     if (is_codec_found) {
-        const char* mpeg_surround = GetMPEGSurroundString(superframe_header.mpeg_surround);
         codec_description = fmt::format("DAB+ {}Hz {} {} {}", 
-            superframe_header.sampling_rate, 
-            superframe_header.is_stereo ? "Stereo" : "Mono",  
-            GetAACDescriptionString(superframe_header.SBR_flag, superframe_header.PS_flag),
-            mpeg_surround ? mpeg_surround : ""
+            superframe_header.sampling_rate,
+            is_stereo ? "Stereo" : "Mono",
+            GetAACDescriptionString(superframe_header.is_spectral_band_replication, superframe_header.is_parametric_stereo),
+            GetMPEGSurroundString(superframe_header.mpeg_surround)
         );
     }
     const auto& dynamic_label = channel.GetDynamicLabel();

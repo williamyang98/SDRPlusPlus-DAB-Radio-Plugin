@@ -67,7 +67,7 @@ jobs:
         cp README.md ${{env.PACKAGE_DIR}}/
 
     - name: Upload files (Release)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: sdrpp_dab_radio_plugin_windows_${{matrix.architecture}}
         path: ${{github.workspace}}/${{env.PACKAGE_DIR}}

@@ -92,12 +92,14 @@ const char* GetMPEGSurroundString(MPEG_Surround mpeg) {
     switch (mpeg) {
     case MPEG_Surround::SURROUND_51:
         return "MPEG Surround 5.1";
+    case MPEG_Surround::SURROUND_71:
+        return "MPEG Surround 7.1";
     case MPEG_Surround::SURROUND_OTHER:
         return "MPEG Surround Other";
     case MPEG_Surround::RFA:
         return "MPEG Surround RFA";
     case MPEG_Surround::NOT_USED:
     default:
-        return NULL;
+        return "";
     }
 }
