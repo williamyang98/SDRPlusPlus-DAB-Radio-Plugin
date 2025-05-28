@@ -23,4 +23,4 @@ target_include_directories(dab_plugin PRIVATE ${SRC_DIR} ${ROOT_DIR} ${AUDIO_DIR
 target_link_libraries(dab_plugin PRIVATE 
     sdrpp_core 
     ofdm_core dab_core basic_radio audio_mixer
-    fmt)
+)
