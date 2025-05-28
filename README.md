@@ -25,7 +25,7 @@ SDR++ is at https://github.com/AlexandreRouma/SDRPlusPlus/tree/master/core.
 ## Download instructions
 Download from releases page or build using the instructions below. Make sure you download the correct version if available.
 
-## Usage instructions
+## Installation instructions
 ### Windows
 1. Paste ```dab_plugin.dll``` into ```modules/``` folder inside your SDR++ install.
 2. Open SDR++.
@@ -38,8 +38,38 @@ Download from releases page or build using the instructions below. Make sure you
 
 Refer to the build instructions if your processor doesn't support AVX2 instructions to compile with SSE2 or AVX instructions.
 
-## Build instructions
-Refer to ```toolchains/*/README.md``` for build instructions. The github workflows in ```.github/workflows``` can also be used as a reference for a working build setup.
+### Build instructions for other platforms
+Refer to ```toolchains/*/README.md``` for build instructions for your specific platform ```*```. The github workflows in ```.github/workflows``` can also be used as a reference for a working build setup.
+
+## Usage instructions
+### Controls for a single channel
+![Image](./docs/ui_channel_controls.png)
+
+If the channel isn't playing music or downloading slideshows you can press ```Run all``` to activate that channel.
+If you want to mute the channel you can press ```Mute audio``` or ```Stop all```. 
+These apply to that specific channel only.
+
+### Previewing active channels in list
+![Image](./docs/ui_channel_single_active.png)
+If you have channels playing music or downloading data (slideshow images) you can see the ```A/D``` status label next to the channel name in the menu.
+
+![Image](./docs/ui_channels_multiple_active.png)
+
+If there are multiple channels playing audio you can see the ```A/D``` status label next to multiple channel names in the menu dropdown.
+
+### Muting all channels
+
+![Image](./docs/ui_mute_all_channels.png)
+
+If you want mute all channels you can go to the ```Global``` tab, select settings to disable audio playback and apply them. 
+
+Then go the specific channel you want playing and **only** enable audio playback for it. Hopefully this helps with any audio playback problems that you might have.
+
+### Changing frequencies
+
+![Image](./docs/ui_changing_frequencies.png)
+
+If you are changing frequencies you need to reset the ```DAB``` decoding block since it isn't aware of frequency changes. Go to the ```DAB``` tab and press the ```Reset``` button to reset the DAB decoding to see new channel entries for that specific frequency.
 
 ## TODO
 - Improve the user interface so that you can view as much information as the original GUI found [here](https://github.com/williamyang98/DAB-Radio).
