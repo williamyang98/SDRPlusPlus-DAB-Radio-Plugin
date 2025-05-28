@@ -42,7 +42,8 @@ jobs:
       run: brew update
 
     - name: Install dependencies 
-      run: brew bundle install --file=./toolchains/macos/Brewfile
+      shell: bash
+      run: ./toolchains/macos/install_packages.sh
 
     - name: Install python mako
       run: pip3 install mako --break-system-packages

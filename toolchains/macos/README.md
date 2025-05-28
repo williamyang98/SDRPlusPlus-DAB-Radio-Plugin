@@ -4,7 +4,7 @@ Clone the repository recursively so all the submodules are installed.
 
 ## Steps
 1. Update brew: ```brew update```
-2. Install packages: ```brew bundle install --file=./toolchains/macos/Brewfile```
+2. Install packages: ```./toolchains/macos/install_packages.sh```
 3. Install mako: ```pip3 install mako```
 4. Install volk: 
     - Change to volk: ```cd vendor/volk```

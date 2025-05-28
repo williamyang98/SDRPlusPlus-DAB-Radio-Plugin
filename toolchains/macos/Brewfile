@@ -1,6 +1,0 @@
-brew 'pkg-config'
-brew 'fftw'
-brew 'glfw'
-brew 'zstd'
-brew 'cmake'
-brew 'ninja'
