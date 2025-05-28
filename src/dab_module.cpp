@@ -1,6 +1,9 @@
 #include "./dab_module.h"
 #include <complex>
 #include <string>
+#include <thread>
+#include <chrono>
+#include <stdint.h>
 #include <imgui/imgui.h>
 #include <imgui/imgui_internal.h>
 #include <gui/gui.h>
@@ -58,9 +61,23 @@ void Audio_Player_Stream::set_callback(AudioPipelineSink::Callback callback) {
         while (m_is_running) {
             const size_t block_size = size_t(m_sample_rate*m_block_size_seconds);
             auto wr_buf = m_output_stream.writeBuf; // default buffer size is 1 million (we can avoid resizing)
+            static_assert(sizeof(Frame<float>) == sizeof(dsp::stereo_t));
             auto frame_buf = tcb::span(reinterpret_cast<Frame<float>*>(wr_buf), block_size);
-            callback(frame_buf, m_sample_rate); 
-            m_output_stream.swap(int(block_size)); // blocking call
+            const size_t total_written = callback(frame_buf, m_sample_rate); 
+            bool is_buffer_swapped = false;
+            if (total_written > 0) {
+                is_buffer_swapped = m_output_stream.swap(int(total_written));
+            }
+            // @fix(#9): https://github.com/williamyang98/SDRPlusPlus-DAB-Radio-Plugin/issues/9
+            // buffer may not be swapped due to the following
+            // - callback did not write any samples to buffer and is not blocking
+            // - buffer swap failed because the writer was blocked which can occur if
+            //   there is no reader and write operations have been disabled 
+            // so we sleep here to avoid looping with zero blocking and consuming cpu cycles
+            if (!is_buffer_swapped) {
+                const int64_t sleep_ms = int64_t(m_block_size_seconds*1e3f);
+                std::this_thread::sleep_for(std::chrono::milliseconds(sleep_ms));
+            }
         }
     });
 }
