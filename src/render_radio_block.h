@@ -2,8 +2,9 @@
 
 #include <stdint.h>
 #include <memory>
+#include <optional>
 #include <gui/widgets/constellation_diagram.h>
-#include "dab/database/dab_database_types.h"
+#include "dab/database/dab_database_entities.h"
 #include "dab/mot/MOT_entities.h"
 #include "utility/lru_cache.h"
 #include "utility/span.h"
@@ -17,7 +18,7 @@ public:
     float constellation_scale = 1.0f;
     float average_constellation_magnitude = 1.0f;
     ImGui::ConstellationDiagram constellation_diagram;
-    service_id_t focused_service_id = 0;
+    std::optional<ServiceId> focused_service_id = std::nullopt;
 private:
     LRU_Cache<uint32_t, std::unique_ptr<Texture>> slideshow_textures_cache;
 public:

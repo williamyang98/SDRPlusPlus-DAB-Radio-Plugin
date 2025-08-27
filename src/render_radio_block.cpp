@@ -118,7 +118,7 @@ void Render_Radio_Block(Radio_Block& block, Radio_View_Controller& ctx) {
         if (radio && ImGui::BeginTabItem("DAB")) {
             if (ImGui::Button("Reset")) {
                 block.reset_radio();
-                ctx.focused_service_id = 0;
+                ctx.focused_service_id = std::nullopt;
             }
 
             auto lock = std::scoped_lock(radio->GetMutex());
@@ -239,7 +239,9 @@ void RenderRadioServices(BasicRadio& radio, Radio_View_Controller& ctx) {
     auto& db = radio.GetDatabase(); 
     // Render channel list selector
     auto* focused_service = find_by_callback(db.services, [&ctx](const auto& service) {
-        return service.reference == ctx.focused_service_id;
+        const auto& id = ctx.focused_service_id;
+        if (!id.has_value()) return false;
+        return service.id.get_unique_identifier() == id.value().get_unique_identifier();
     });
     const char* const SERVICE_LABEL_PLACEHOLDER = "[Unknown]";
     const char* focused_service_label = "None selected";
@@ -257,6 +259,9 @@ void RenderRadioServices(BasicRadio& radio, Radio_View_Controller& ctx) {
         static std::vector<Service*> service_list;
         service_list.clear();
         for (auto& service: db.services) {
+            if (service.label.empty()) {
+                continue;
+            }
             service_list.push_back(&service);
         }
         std::sort(service_list.begin(), service_list.end(), [](const auto* a, const auto* b) {
@@ -264,11 +269,11 @@ void RenderRadioServices(BasicRadio& radio, Radio_View_Controller& ctx) {
         });
 
         for (auto* service: service_list) {
-            ImGui::PushID(service->reference);
+            ImGui::PushID(service->id.get_unique_identifier());
             bool is_play_audio = false;
             bool is_decode_data = false;
             for (auto& component: db.service_components) {
-                if (component.service_reference != service->reference) continue;
+                if (component.service_id.get_unique_identifier() != service->id.get_unique_identifier()) continue;
                 auto* channel = radio.Get_Audio_Channel(component.subchannel_id);
                 if (channel != nullptr) {
                     auto& controls = channel->GetControls();
@@ -277,15 +282,17 @@ void RenderRadioServices(BasicRadio& radio, Radio_View_Controller& ctx) {
                 }
             }
 
-            auto label = fmt::format("{}###{}", service->label.empty() ? SERVICE_LABEL_PLACEHOLDER : service->label, service->reference);
+            auto label = fmt::format("{}###{}", service->label.empty() ? SERVICE_LABEL_PLACEHOLDER : service->label, service->id.get_unique_identifier());
             const std::string status_label = fmt::format("{}/{}",
                 is_play_audio ? "A" : "-",
                 is_decode_data ? "D" : "-"
             );
 
-            const bool is_focused = service->reference == ctx.focused_service_id;
+            const bool is_focused =
+                ctx.focused_service_id.has_value() &&
+                service->id.get_unique_identifier() == ctx.focused_service_id.value().get_unique_identifier();
             if (ImGui::Selectable(label.c_str(), is_focused)) {
-                ctx.focused_service_id = service->reference;
+                ctx.focused_service_id = service->id;
             }
  
             const float offset = ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(status_label.c_str()).x;
@@ -436,11 +443,28 @@ static void RenderDABChannelStatus(Basic_DAB_Channel& channel, Subchannel& subch
     const uint32_t bitrate_kbps = GetSubchannelBitrate(subchannel);
     const auto& audio_params_opt = channel.GetAudioParams();
     if (audio_params_opt.has_value()) {
-        const auto& audio_params = audio_params_opt.value();
-        codec_description = fmt::format("DAB MP2 {}Hz {} {}kb/s", 
-            audio_params.sample_rate, 
-            audio_params.is_stereo ? "Stereo" : "Mono",  
-            audio_params.bitrate_kbps
+        const auto& params = audio_params_opt.value();
+        const char* mpeg_version = nullptr;
+        switch (params.mpeg_version) {
+        case MP2_Audio_Decoder::MPEG_Version::MPEG_1_0: mpeg_version = "MPEG 1.0"; break;
+        case MP2_Audio_Decoder::MPEG_Version::MPEG_2_0: mpeg_version = "MPEG 2.0"; break;
+        case MP2_Audio_Decoder::MPEG_Version::MPEG_2_5: mpeg_version = "MPEG 2.5"; break;
+        default: mpeg_version = "?";
+        }
+
+        const char* mpeg_layer = nullptr;
+        switch (params.mpeg_layer) {
+        case MP2_Audio_Decoder::MPEG_Layer::LAYER_I: mpeg_layer = "Layer I"; break;
+        case MP2_Audio_Decoder::MPEG_Layer::LAYER_II: mpeg_layer = "Layer II"; break;
+        case MP2_Audio_Decoder::MPEG_Layer::LAYER_III: mpeg_layer = "Layer III"; break;
+        default: mpeg_layer = "?";
+        }
+
+        codec_description = fmt::format("DAB {}Hz {} {}kb/s {} {}",
+            params.sample_rate,
+            params.is_stereo ? "Stereo" : "Mono",
+            params.bitrate_kbps,
+            mpeg_version, mpeg_layer
         );
     }
     const auto& dynamic_label = channel.GetDynamicLabel();
@@ -467,7 +491,9 @@ void RenderRadioService(BasicRadio& radio, Radio_View_Controller& ctx) {
     auto& db = radio.GetDatabase();
 
     auto* service = find_by_callback(db.services, [&ctx](const auto& service) {
-        return service.reference == ctx.focused_service_id;
+        const auto& id = ctx.focused_service_id;
+        if (!id.has_value()) return false;
+        return service.id.get_unique_identifier() == id.value().get_unique_identifier();
     });
     if (service == nullptr) {
         ImGui::Text("Please select a service");
@@ -477,7 +503,7 @@ void RenderRadioService(BasicRadio& radio, Radio_View_Controller& ctx) {
     static std::vector<ServiceComponent*> service_components;
     service_components.clear();
     for (auto& service_component: db.service_components) {
-        if (service_component.service_reference != service->reference) continue;
+        if (service_component.service_id.get_unique_identifier() != service->id.get_unique_identifier()) continue;
         service_components.push_back(&service_component);
     }
 
@@ -533,12 +559,25 @@ void RenderRadioService(BasicRadio& radio, Radio_View_Controller& ctx) {
             FIELD_MACRO("Programme Type", "%s (%u)", 
                 GetProgrammeTypeString(ensemble.international_table_id, service->programme_type),
                 service->programme_type);
-            FIELD_MACRO("Language", "%s (%u)", GetLanguageTypeString(service->language), service->language);
-            FIELD_MACRO("Closed Caption", "%u", service->closed_caption);
-            FIELD_MACRO("Country Code", "0x%02X.%01X", service->extended_country_code, service->country_id);
-            FIELD_MACRO("Country Name", "%s", GetCountryString(
-                service->extended_country_code ? service->extended_country_code : ensemble.extended_country_code, 
-                service->country_id ? service->country_id : ensemble.country_id));
+            // handle short/long form service references
+            const auto service_id = service->id;
+            if (service_id.type == ServiceIdType::BITS32) {
+                FIELD_MACRO("ID", "0x%08X", service_id.get_unique_identifier());
+            } else {
+                FIELD_MACRO("ID", "0x%04X", service_id.get_unique_identifier());
+            }
+            {
+                extended_country_id_t extended_country_code = service_id.get_extended_country_code(); 
+                if (extended_country_code == 0) {
+                    extended_country_code = ensemble.extended_country_code;
+                }
+                extended_country_id_t country_id = service_id.get_country_code();
+                if (country_id == 0) {
+                    country_id = ensemble.id.get_country_code();
+                }
+                FIELD_MACRO("Country", "%s (0x%02X.%01X)", GetCountryString(extended_country_code, country_id), extended_country_code, country_id);
+            }
+
 
             ImGui::EndTable();
         }
@@ -560,7 +599,7 @@ void RenderRadioService(BasicRadio& radio, Radio_View_Controller& ctx) {
             static std::vector<const LinkService*> link_services;
             link_services.clear();
             for (const auto& link_service: db.link_services) {
-                if (link_service.service_reference != service->reference) continue;
+                if (link_service.service_id.get_unique_identifier() != service->id.get_unique_identifier()) continue;
                 link_services.push_back(&link_service);
             }
             const int total_linked_services = int(link_services.size());
@@ -757,10 +796,10 @@ void RenderRadioEnsemble(BasicRadio& radio) {
         int row_id = 0;
         const float LTO = static_cast<float>(ensemble.local_time_offset) / 10.0f;
         FIELD_MACRO("Name", "%.*s", int(ensemble.label.length()), ensemble.label.c_str());
-        FIELD_MACRO("ID", "%u", ensemble.reference);
-        FIELD_MACRO("Country Code", "%s (0x%02X.%01X)", 
-            GetCountryString(ensemble.extended_country_code, ensemble.country_id),
-            ensemble.extended_country_code, ensemble.country_id);
+        FIELD_MACRO("ID", "0x%04X", ensemble.id.get_unique_identifier());
+        FIELD_MACRO("Country", "%s (0x%02X.%01X)", 
+            GetCountryString(ensemble.extended_country_code, ensemble.id.get_country_code()),
+            ensemble.extended_country_code, ensemble.id.get_country_code());
         FIELD_MACRO("Local Time Offset", "%.1f hours", LTO);
         FIELD_MACRO("Inter Table ID", "%u", ensemble.international_table_id);
         FIELD_MACRO("Total Services", "%u", ensemble.nb_services);
