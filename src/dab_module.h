@@ -19,18 +19,17 @@ class OFDM_Demod;
 class Radio_View_Controller;
 class Radio_Block;
 
-class OFDM_Demodulator_Sink: public dsp::Sink<dsp::complex_t>
+class OFDM_Demodulator_Sink: public dsp::HandlerSink<dsp::complex_t>
 {
 private:
-    using base_type = dsp::Sink<dsp::complex_t>;
+    using base_type = dsp::HandlerSink<dsp::complex_t>;
     std::shared_ptr<OFDM_Demod> m_ofdm_demod;
 public:
-    OFDM_Demodulator_Sink(std::shared_ptr<OFDM_Demod> ofdm_demod): m_ofdm_demod(ofdm_demod) {}
+    OFDM_Demodulator_Sink(std::shared_ptr<OFDM_Demod> ofdm_demod);
     ~OFDM_Demodulator_Sink() override {
         if (!base_type::_block_init) return;
         base_type::stop();
     }
-    int run();
 };
 
 class Audio_Player_Stream: public AudioPipelineSink

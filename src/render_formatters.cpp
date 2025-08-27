@@ -1,5 +1,5 @@
 #include "./render_formatters.h"
-#include <fmt/core.h>
+#include <spdlog/fmt/fmt.h>
 
 #include "dab/constants/subchannel_protection_tables.h"
 #include "dab/constants/country_table.h"

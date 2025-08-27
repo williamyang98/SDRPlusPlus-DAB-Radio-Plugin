@@ -1,5 +1,6 @@
 #include <config.h>
 #include <core.h>
+#include <options.h>
 #include <string>
 
 #include "./dab_module.h"
@@ -14,7 +15,7 @@ SDRPP_MOD_INFO{
 
 MOD_EXPORT void _INIT_() {
     json def = json({});
-    config.setPath(core::args["root"].s() + "/dab_plugin_config.json");
+    config.setPath(options::opts.root + "/dab_plugin_config.json");
     config.load(def);
     config.enableAutoSave();
 }

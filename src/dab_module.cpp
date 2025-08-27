@@ -16,15 +16,18 @@
 #include "utility/span.h"
 
 ConfigManager config; // extern
-
-int OFDM_Demodulator_Sink::run() {
-    int count = base_type::_in->read();
-    if (count < 0) return -1;
-    auto* buf = base_type::_in->readBuf;
-    auto block = tcb::span(reinterpret_cast<std::complex<float>*>(buf), size_t(count));
-    m_ofdm_demod->Process(block);
-    base_type::_in->flush();
-    return count;
+                      //
+OFDM_Demodulator_Sink::OFDM_Demodulator_Sink(std::shared_ptr<OFDM_Demod> ofdm_demod)
+: m_ofdm_demod(ofdm_demod) 
+{
+    setHandler(
+        [](dsp::complex_t* buf, int count, void* ctx) {
+            auto ofdm_demod = reinterpret_cast<OFDM_Demod*>(ctx);
+            auto block = tcb::span(reinterpret_cast<std::complex<float>*>(buf), size_t(count));
+            ofdm_demod->Process(block);
+        },
+        reinterpret_cast<void*>(m_ofdm_demod.get())
+    );
 }
 
 Audio_Player_Stream::Audio_Player_Stream(float sample_rate, float block_size_seconds)
@@ -91,7 +94,6 @@ DABModule::DABModule(std::string _name)
     // setup radio
     radio_block = std::make_unique<Radio_Block>(1,1);
     ofdm_demodulator_sink = std::make_unique<OFDM_Demodulator_Sink>(radio_block->get_ofdm_demodulator());
-    ofdm_demodulator_sink->init(nullptr);
     radio_view_controller = std::make_unique<Radio_View_Controller>();
     // setup audio
     const float DEFAULT_AUDIO_SAMPLE_RATE = 48000.0f;

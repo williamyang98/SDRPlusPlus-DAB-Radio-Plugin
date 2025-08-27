@@ -8,3 +8,4 @@ brew install pkg-config
 brew install glfw
 brew install zstd
 brew install ninja
+brew install glew
