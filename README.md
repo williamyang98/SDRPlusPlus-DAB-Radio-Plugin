@@ -42,14 +42,20 @@ Refer to the build instructions if your processor doesn't support AVX2 instructi
 Refer to ```toolchains/*/README.md``` for build instructions for your specific platform ```*```. The github workflows in ```.github/workflows``` can also be used as a reference for a working build setup.
 
 ## Usage instructions
-### Controls for a single channel
+### 1. Enabling the plugin
+![Image](./docs/ui_enable_plugin.png)
+
+### 2. Adjusting the gain to decode signal
+![Image](./docs/ui_adjust_gain.png)
+
+### 3. Controls for a single channel
 ![Image](./docs/ui_channel_controls.png)
 
 If the channel isn't playing music or downloading slideshows you can press ```Run all``` to activate that channel.
 If you want to mute the channel you can press ```Mute audio``` or ```Stop all```. 
 These apply to that specific channel only.
 
-### Previewing active channels in list
+### 4. Previewing active channels in list
 ![Image](./docs/ui_channel_single_active.png)
 If you have channels playing music or downloading data (slideshow images) you can see the ```A/D``` status label next to the channel name in the menu.
 
@@ -57,7 +63,7 @@ If you have channels playing music or downloading data (slideshow images) you ca
 
 If there are multiple channels playing audio you can see the ```A/D``` status label next to multiple channel names in the menu dropdown.
 
-### Muting all channels
+### 5. Muting all channels
 
 ![Image](./docs/ui_mute_all_channels.png)
 
@@ -65,7 +71,7 @@ If you want mute all channels you can go to the ```Global``` tab, select setting
 
 Then go the specific channel you want playing and **only** enable audio playback for it. Hopefully this helps with any audio playback problems that you might have.
 
-### Changing frequencies
+### 6. Changing frequencies
 
 ![Image](./docs/ui_changing_frequencies.png)
 
